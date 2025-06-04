@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хавтгай ба бүтэн дүрсүүд | MaTL</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/">Нүүр</a>
+            <a href="/preschool" class="active">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea"></div>
+    </div>
+    <div class="canvas-container">
+        <div class="a1-content-wrap">
+            <div class="a1-main-card">
+                <div class="a1-main-left">
+                    <div class="a1-breadcrumb"><a href="/preschool">Цэцэрлэг</a> &nbsp;›&nbsp; <b>L.1 Хавтгай ба бүтэн дүрсүүд</b></div>
+                    <div class="a1-example-row">
+                        <div class="a1-example-btn"><span class="icon">💡</span>Жишээ ашиглан сурах</div>
+                    </div>
+                    <div class="a1-question" style="font-size:1.2rem;display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+                        <img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" />
+                        <span id="questionText"></span>
+                    </div>
+                    <div class="a1-imgs" id="shapeChoices" style="margin-bottom:24px;"></div>
+                    <div class="a1-submit">
+                        <button id="submitBtn" style="background:#59c113;color:#fff;min-width:120px;">Илгээх</button>
+                    </div>
+                </div>
+                <div class="a1-main-sidebar">
+                    <div class="a1-sidebar-box a1-green">
+                        <div class="a1-sidebar-title">Асуулт</div>
+                        <div id="questionsAnswered" class="a1-sidebar-value">0</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-blue">
+                        <div class="a1-sidebar-title">Өнгөрсөн хугацаа</div>
+                        <div id="timeElapsed" class="a1-sidebar-value">00:00</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-orange">
+                        <div class="a1-sidebar-title">Оноо<br><span class="a1-sidebar-sub">(100-аас)</span></div>
+                        <div id="score" class="a1-sidebar-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Login dropdown (same as other files)
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        const loginArea = document.getElementById('loginArea');
+        if(data.username) {
+            loginArea.innerHTML = `
+            <div class="user-dropdown" style="position:relative; display:inline-block;">
+                <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea; border-radius:8px; padding:10px 18px; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${data.username}</span>
+                    <span style="font-size:1.1rem;">▼</span>
+                </button>
+                <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:44px; background:#fff; box-shadow:0 4px 24px rgba(0,0,0,0.10); border-radius:12px; min-width:240px; z-index:100; margin-top:8px; padding:0;">
+                    <div style="padding:16px 20px 10px 20px; border-bottom:1px solid #f0f0f0;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#222;">${data.username}</div>
+                        <div style="font-size:0.97rem; color:#388eea;">${data.email || ''}</div>
+                    </div>
+                    <a href="/profile" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#128100;</span> Профайл
+                    </a>
+                    <a href="/settings" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#9881;</span> Тохиргоо
+                    </a>
+                    <a href="/logout" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#d32f2f; text-decoration:none; font-size:1rem;">
+                        <span style="font-size:1.2rem;">&#8617;</span> Гарах
+                    </a>
+                </div>
+            </div>`;
+            const btn = document.getElementById('userDropdownBtn');
+            const menu = document.getElementById('userDropdownMenu');
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.style.display = 'none';
+                }
+            });
+        } else {
+            loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+        }
+    });
+
+    // Flat vs Solid shape questions
+    const shapeQuestions = [
+        {
+            question: 'Энэ дүрс хавтгай юу, бүтэн үү?',
+            answer: 'solid',
+            img: 'cone',
+            choices: [
+                { label: 'Хавтгай', value: 'flat' },
+                { label: 'Бүтэн', value: 'solid' }
+            ],
+            example: {
+                label: 'Бүтэн (конус)',
+                img: 'cone'
+            },
+            explanation: 'Конус нь бүтэн дүрс юм.'
+        },
+        {
+            question: 'Энэ дүрс хавтгай юу, бүтэн үү?',
+            answer: 'flat',
+            img: 'triangle',
+            choices: [
+                { label: 'Хавтгай', value: 'flat' },
+                { label: 'Бүтэн', value: 'solid' }
+            ],
+            example: {
+                label: 'Хавтгай (гурвалжин)',
+                img: 'triangle'
+            },
+            explanation: 'Гурвалжин нь хавтгай дүрс юм.'
+        },
+        {
+            question: 'Энэ дүрс хавтгай юу, бүтэн үү?',
+            answer: 'solid',
+            img: 'cube',
+            choices: [
+                { label: 'Хавтгай', value: 'flat' },
+                { label: 'Бүтэн', value: 'solid' }
+            ],
+            example: {
+                label: 'Бүтэн (шоо)',
+                img: 'cube'
+            },
+            explanation: 'Шоо нь бүтэн дүрс юм.'
+        },
+        {
+            question: 'Энэ дүрс хавтгай юу, бүтэн үү?',
+            answer: 'flat',
+            img: 'rectangle',
+            choices: [
+                { label: 'Хавтгай', value: 'flat' },
+                { label: 'Бүтэн', value: 'solid' }
+            ],
+            example: {
+                label: 'Хавтгай (тэгш өнцөгт)',
+                img: 'rectangle'
+            },
+            explanation: 'Тэгш өнцөгт нь хавтгай дүрс юм.'
+        },
+        {
+            question: 'Энэ дүрс хавтгай юу, бүтэн үү?',
+            answer: 'solid',
+            img: 'sphere',
+            choices: [
+                { label: 'Хавтгай', value: 'flat' },
+                { label: 'Бүтэн', value: 'solid' }
+            ],
+            example: {
+                label: 'Бүтэн (бөмбөрцөг)',
+                img: 'sphere'
+            },
+            explanation: 'Бөмбөрцөг нь бүтэн дүрс юм.'
+        },
+        {
+            question: 'Энэ дүрс хавтгай юу, бүтэн үү?',
+            answer: 'flat',
+            img: 'circle',
+            choices: [
+                { label: 'Хавтгай', value: 'flat' },
+                { label: 'Бүтэн', value: 'solid' }
+            ],
+            example: {
+                label: 'Хавтгай (дугуй)',
+                img: 'circle'
+            },
+            explanation: 'Дугуй нь хавтгай дүрс юм.'
+        }
+    ];
+    let currentIdx = 0;
+    let selected = null;
+    let questionsAnswered = 0;
+    let score = 0;
+    let timer = 0;
+    let timerInterval = null;
+    const questionsAnsweredEl = document.getElementById('questionsAnswered');
+    const scoreEl = document.getElementById('score');
+    const timeElapsedEl = document.getElementById('timeElapsed');
+    const shapeChoicesDiv = document.getElementById('shapeChoices');
+    const submitBtn = document.getElementById('submitBtn');
+    const feedback = document.createElement('div');
+    feedback.className = 'a1-feedback';
+    shapeChoicesDiv.parentNode.insertBefore(feedback, shapeChoicesDiv.nextSibling);
+
+    function renderShapeImg(img) {
+        if(img === 'cone') {
+            return `<svg width='120' height='160' viewBox='0 0 120 160'><polygon points='60,20 110,140 10,140' fill='#ffe066' stroke='#e6b800' stroke-width='2'/><ellipse cx='60' cy='140' rx='50' ry='12' fill='#ffe066' stroke='#e6b800' stroke-width='2' opacity='0.5'/></svg>`;
+        } else if(img === 'cube') {
+            return `<svg width='120' height='120' viewBox='0 0 120 120'><rect x='20' y='20' width='80' height='80' fill='#b3e5fc' stroke='#0288d1' stroke-width='2'/></svg>`;
+        } else if(img === 'sphere') {
+            return `<svg width='120' height='120' viewBox='0 0 120 120'><ellipse cx='60' cy='60' rx='50' ry='50' fill='#ffd180' stroke='#ffab00' stroke-width='2'/></svg>`;
+        } else if(img === 'triangle') {
+            return `<svg width='120' height='120' viewBox='0 0 120 120'><polygon points='60,20 110,110 10,110' fill='#7ecbff' stroke='#0288d1' stroke-width='2'/></svg>`;
+        } else if(img === 'rectangle') {
+            return `<svg width='120' height='80' viewBox='0 0 120 80'><rect x='10' y='10' width='100' height='60' fill='#ffd180' stroke='#ffab00' stroke-width='2'/></svg>`;
+        } else if(img === 'circle') {
+            return `<svg width='120' height='120' viewBox='0 0 120 120'><ellipse cx='60' cy='60' rx='50' ry='50' fill='#ffb366' stroke='#e65100' stroke-width='2'/></svg>`;
+        }
+        return '';
+    }
+    function renderQuestion(idx) {
+        const q = shapeQuestions[idx];
+        document.getElementById('questionText').innerHTML = q.question;
+        let html = `<div style='display:flex;justify-content:center;margin-bottom:18px;'>${renderShapeImg(q.img)}</div>`;
+        // Place answers in a vertical column below the image
+        html += '<div style="display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:18px;">';
+        for(let i=0;i<q.choices.length;i++) {
+            html += `<button class="shape-choice" data-choice="${q.choices[i].value}" style="font-size:1.2rem;padding:16px 36px;border:2px solid #b3e5fc;border-radius:10px;background:#fff;cursor:pointer;min-width:120px;">${q.choices[i].label}</button>`;
+        }
+        html += '</div>';
+        shapeChoicesDiv.innerHTML = html;
+        document.querySelectorAll('.shape-choice').forEach(choice => {
+            choice.onclick = function() {
+                document.querySelectorAll('.shape-choice').forEach(c => c.style.borderColor = '#b3e5fc');
+                choice.style.borderColor = '#4fc3f7';
+                selected = choice.getAttribute('data-choice');
+            };
+        });
+        selected = null;
+        feedback.textContent = '';
+        feedback.style.color = '';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Илгээх';
+    }
+    function startTimer() {
+        if (timerInterval) return;
+        timerInterval = setInterval(() => {
+            timer++;
+            const min = String(Math.floor(timer/60)).padStart(2,'0');
+            const sec = String(timer%60).padStart(2,'0');
+            timeElapsedEl.textContent = `${min}:${sec}`;
+        }, 1000);
+    }
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    function resetAllStateAndRender() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        currentIdx = 0;
+        renderQuestion(currentIdx);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = mainSubmitHandler;
+    }
+    function showCongrats() {
+        stopTimer();
+        feedback.innerHTML = `Та хавтгай ба бүтэн дүрсүүдийг ялгаж сурлаа! Баяр хүргэе!<br><br>
+            <a href="/preschool"><button style="background:#fff;color:#388eea;border:1px solid #388eea;border-radius:4px;padding:10px 28px;font-size:1.1rem;font-weight:bold;cursor:pointer;">Цэцэрлэг рүү буцах</button></a>
+        `;
+        feedback.style.color = '#4caf50';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Дахин оролдох';
+        submitBtn.onclick = function() {
+            resetAllStateAndRender();
+        };
+    }
+    function mainSubmitHandler() {
+        if(selected === null) {
+            feedback.textContent = 'Сонголтоо бөглөнө үү!';
+            feedback.style.color = '#1976d2';
+            return;
+        }
+        questionsAnswered++;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        if(selected === shapeQuestions[currentIdx].answer) {
+            if (score < 100) score += 20;
+            if (score > 100) score = 100;
+            scoreEl.textContent = score;
+            feedback.innerHTML = `
+                <div style="display:flex;justify-content:center;align-items:center;height:120px;">
+                    <div style="border:2px solid #c5e1a5;background:#f9fff3;border-radius:6px;padding:24px 36px;box-shadow:0 2px 8px #e0f2c7;display:flex;align-items:center;gap:18px;">
+                        <span style="font-size:2.2rem;color:#7cb342;vertical-align:middle;">&#10003;</span>
+                        <span style="font-size:1.5rem;color:#7cb342;font-weight:bold;">Зөв!</span>
+                    </div>
+                </div>
+            `;
+            feedback.style.color = '';
+            saveProgressIfLoggedIn();
+            submitBtn.textContent = 'Илгээх';
+            if(score === 100) {
+                showCongrats();
+                return;
+            }
+            setTimeout(() => {
+                if(score < 100) {
+                    currentIdx = getRandomIdx();
+                    renderQuestion(currentIdx);
+                }
+            }, 1200);
+        } else {
+            score = 0;
+            scoreEl.textContent = score;
+            feedback.innerHTML = `
+                <div style='background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+                    <div style='color:#e53935;font-size:1.2rem;font-weight:bold;margin-bottom:8px;'>Буруу!</div>
+                    <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Тайлбар:</span> ${shapeQuestions[currentIdx].explanation}</div>
+                    <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Жишээ:</span> <span style='display:inline-flex;gap:8px;vertical-align:middle;'>
+                        ${renderShapeImg(shapeQuestions[currentIdx].example.img)} <span style='font-size:1.1rem;color:#4caf50;'>(${shapeQuestions[currentIdx].example.label})</span>
+                    </span></div>
+                    <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${shapeQuestions[currentIdx].example.label}</b></div>
+                    <div style='color:#888;'>Дахин оролдоорой.</div>
+                </div>
+            `;
+            feedback.style.color = '#e53935';
+            submitBtn.textContent = 'Дахин оролдох';
+            saveProgressIfLoggedIn();
+            submitBtn.onclick = function() {
+                resetAllStateAndRender();
+            };
+        }
+    }
+    function saveProgressIfLoggedIn() {
+        fetch('/api/user').then (r=>r.json()).then(data => {
+            if(data.username) {
+                fetch('/api/progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        skill: 'l1',
+                        score: score,
+                        questionsAnswered: questionsAnswered
+                    })
+                });
+            }
+        });
+    }
+    submitBtn.onclick = mainSubmitHandler;
+    // Show explanation when clicking the example button
+    const exampleBtn = document.querySelector('.a1-example-btn');
+    exampleBtn.addEventListener('click', function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        // Show example for current question
+        const q = shapeQuestions[currentIdx];
+        let shapeHtml = renderShapeImg(q.example.img);
+        feedback.innerHTML = `<div style='background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+            <div style='color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;'>Тайлбар</div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> ${q.question}</div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Жишээ:</span> ${shapeHtml} <span style='font-size:1.1rem;color:#4caf50;'>(${q.example.label})</span></div>
+            <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${q.example.label}</b></div>
+            <div style='color:#888;'>Жишээгээр тайлбарлав.</div>
+        </div>`;
+        feedback.style.color = '';
+        submitBtn.textContent = 'Дахин оролдох';
+        submitBtn.disabled = false;
+        submitBtn.onclick = function() {
+            resetAllStateAndRender();
+        };
+    });
+    // Audio playback for question
+    const voiceBtn = document.getElementById('voiceBtn1');
+    if (voiceBtn) {
+        voiceBtn.onclick = function() {
+            const audioUrl = window.location.origin + '/static/uploads/l1-1.mp3';
+            let audio = document.getElementById('voiceAudio1');
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.id = 'voiceAudio1';
+                audio.preload = 'auto';
+                document.body.appendChild(audio);
+            }
+            if (audio.src !== audioUrl) {
+                audio.src = audioUrl;
+            }
+            audio.currentTime = 0;
+            audio.play();
+        };
+    }
+    // Random question index
+    function getRandomIdx() {
+        return Math.floor(Math.random() * shapeQuestions.length);
+    }
+    function nextQuestion() {
+        currentIdx = getRandomIdx();
+        renderQuestion(currentIdx);
+    }
+    // Initial render
+    currentIdx = getRandomIdx();
+    renderQuestion(currentIdx);
+    startTimer();
+    </script>
+</body>
+</html>

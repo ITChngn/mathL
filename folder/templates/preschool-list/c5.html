@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 хүртэлх тоог илэрхийлэх | MaTL</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/">Нүүр</a>
+            <a href="/preschool" class="active">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea"></div>
+    </div>
+    <div class="canvas-container">
+        <div class="a1-content-wrap">
+            <div class="a1-main-card">
+                <div class="a1-main-left">
+                    <div class="a1-breadcrumb"><a href="/preschool">Цэцэрлэг</a> &nbsp;›&nbsp; <b>C.5 10 хүртэлх тоог илэрхийлэх</b></div>
+                    <div class="a1-example-row">
+                        <div class="a1-example-btn"><span class="icon">💡</span>Жишээ ашиглан сурах</div>
+                    </div>
+                    <div class="a1-question"> 
+    <img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" />
+    Доорх арван хүрээ дээр хэдэн цэнхэр дугуй байгааг тоолоорой.
+</div>
+                    <div class="a1-imgs"></div>
+                    <div class="a1-question"> 
+    <img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn2" />
+    Хэдэн цэнхэр дугуй байна вэ?
+</div>
+                    <div class="a1-answers">
+                        <button data-answer="1">1</button>
+                        <button data-answer="2">2</button>
+                        <button data-answer="3">3</button>
+                        <button data-answer="4">4</button>
+                        <button data-answer="5">5</button>
+                        <button data-answer="6">6</button>
+                        <button data-answer="7">7</button>
+                        <button data-answer="8">8</button>
+                        <button data-answer="9">9</button>
+                        <button data-answer="10">10</button>
+                    </div>
+                    <div class="a1-submit">
+                        <button id="submitBtn">Илгээх</button>
+                    </div>
+                    <div class="a1-feedback" id="feedback"></div>
+                </div>
+                <div class="a1-main-sidebar">
+                    <div class="a1-sidebar-box a1-green">
+                        <div class="a1-sidebar-title">Questions answered</div>
+                        <div id="questionsAnswered" class="a1-sidebar-value">0</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-blue">
+                        <div class="a1-sidebar-title">Time elapsed</div>
+                        <div id="timeElapsed" class="a1-sidebar-value">00:00</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-orange">
+                        <div class="a1-sidebar-title">SmartScore<br><span class="a1-sidebar-sub">out of 100</span></div>
+                        <div id="score" class="a1-sidebar-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Check login status via a simple fetch to /api/user
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        const loginArea = document.getElementById('loginArea');
+        if(data.username) {
+            loginArea.innerHTML = `
+            <div class="user-dropdown" style="position:relative; display:inline-block;">
+                <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea; border-radius:8px; padding:10px 18px; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${data.username}</span>
+                    <span style="font-size:1.1rem;">▼</span>
+                </button>
+                <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:44px; background:#fff; box-shadow:0 4px 24px rgba(0,0,0,0.10); border-radius:12px; min-width:240px; z-index:100; margin-top:8px; padding:0;">
+                    <div style="padding:16px 20px 10px 20px; border-bottom:1px solid #f0f0f0;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#222;">${data.username}</div>
+                        <div style="font-size:0.97rem; color:#388eea;">${data.email || ''}</div>
+                    </div>
+                    <a href="/profile" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#128100;</span> Профайл
+                    </a>
+                    <a href="/settings" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#9881;</span> Тохиргоо
+                    </a>
+                    <a href="/logout" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#d32f2f; text-decoration:none; font-size:1rem;">
+                        <span style="font-size:1.2rem;">&#8617;</span> Гарах
+                    </a>
+                </div>
+            </div>`;
+            // Dropdown logic
+            const btn = document.getElementById('userDropdownBtn');
+            const menu = document.getElementById('userDropdownMenu');
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.style.display = 'none';
+                }
+            });
+        } else {
+            loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+        }
+    });
+
+// Questions data for up to 10
+const questions = Array.from({length: 10}, (_, i) => ({
+    circleCount: i + 1,
+    question: 'Доорх арван хүрээ дээр хэдэн цэнхэр дугуй байгааг тоолоорой.',
+    ask: 'Хэдэн цэнхэр дугуй байна вэ?',
+    answer: i + 1
+}));
+let currentIdx = Math.floor(Math.random() * questions.length);
+let selectedAnswer = null;
+let questionsAnswered = 0;
+let score = 0;
+let timer = 0;
+let timerInterval = null;
+const questionsAnsweredEl = document.getElementById('questionsAnswered');
+const scoreEl = document.getElementById('score');
+const timeElapsedEl = document.getElementById('timeElapsed');
+const imgsDiv = document.querySelector('.a1-imgs');
+const questionDivs = document.querySelectorAll('.a1-question');
+const answerBtns = document.querySelectorAll('.a1-answers button');
+const feedback = document.getElementById('feedback');
+const submitBtn = document.getElementById('submitBtn');
+
+function renderQuestion(idx) {
+    const q = questions[idx];
+    // Render 10-frame with circles
+    imgsDiv.innerHTML = '';
+    const frame = document.createElement('div');
+    frame.style.display = 'flex';
+    frame.style.gap = '8px';
+    frame.style.margin = '18px 0 18px 0';
+    for(let i=0;i<10;i++) {
+        const cell = document.createElement('div');
+        cell.style.width = '38px';
+        cell.style.height = '38px';
+        cell.style.border = '2px solid #bdbdbd';
+        cell.style.borderRadius = '8px';
+        cell.style.display = 'flex';
+        cell.style.alignItems = 'center';
+        cell.style.justifyContent = 'center';
+        cell.style.background = '#fff';
+        if(i < q.circleCount) {
+            const circle = document.createElement('span');
+            circle.style.display = 'inline-block';
+            circle.style.width = '28px';
+            circle.style.height = '28px';
+            circle.style.background = '#388eea';
+            circle.style.borderRadius = '50%';
+            circle.style.margin = '0 auto';
+            circle.style.cursor = 'pointer';
+            circle.addEventListener('click', function() {
+                this.classList.toggle('selected');
+                if(this.classList.contains('selected')) {
+                    this.style.background = '#43a047';
+                } else {
+                    this.style.background = '#388eea';
+                }
+            });
+            cell.appendChild(circle);
+        }
+        frame.appendChild(cell);
+    }
+    imgsDiv.appendChild(frame);
+    // Render questions WITH volume icons
+    questionDivs[0].innerHTML = '<img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" /> ' + q.question;
+    questionDivs[1].innerHTML = '<img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn2" /> ' + q.ask;
+    // Reset answers
+    answerBtns.forEach(btn => btn.classList.remove('selected'));
+    selectedAnswer = null;
+    feedback.textContent = '';
+    feedback.style.color = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Илгээх';
+    // Attach voice button handlers (speech synthesis)
+    const voiceBtn1 = document.getElementById('voiceBtn1');
+    if (voiceBtn1) {
+        voiceBtn1.onclick = function() {
+            const audio = new Audio('/static/uploads/c5-1.mp3');
+            audio.play();
+        };
+    }
+    const voiceBtn2 = document.getElementById('voiceBtn2');
+    if (voiceBtn2) {
+        voiceBtn2.onclick = function() {
+            const audio = new Audio('/static/uploads/c5-2.mp3');
+            audio.play();
+        };
+    }
+}
+
+answerBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+        answerBtns.forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedAnswer = Number(this.getAttribute('data-answer'));
+    });
+});
+
+function startTimer() {
+    if (timerInterval) return;
+    timerInterval = setInterval(() => {
+        timer++;
+        const min = String(Math.floor(timer/60)).padStart(2,'0');
+        const sec = String(timer%60).padStart(2,'0');
+        timeElapsedEl.textContent = `${min}:${sec}`;
+    }, 1000);
+}
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+startTimer();
+
+function showTeachAnswer(correct) {
+    feedback.textContent = `Зөв хариулт: ${correct}`;
+    feedback.style.color = '#1976d2';
+}
+
+function showCongrats() {
+    stopTimer(); // Stop the timer when congrats is shown
+    feedback.innerHTML = `Та 10 хүртэлх тоог илэрхийлж сурлаа! Баяр хүргэе!<br><br>
+        <a href="/preschool"><button style="background:#fff;color:#388eea;border:1px solid #388eea;border-radius:4px;padding:10px 28px;font-size:1.1rem;font-weight:bold;cursor:pointer;">Цэцэрлэг рүү буцах</button></a>
+    `;
+    feedback.style.color = '#4caf50';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.onclick = function() {
+        // Reset all state for a new attempt
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        // Pick a new random question
+        currentIdx = Math.floor(Math.random() * questions.length);
+        renderQuestion(currentIdx);
+        // Restart timer
+        stopTimer();
+        startTimer();
+        // Restore submit logic
+        submitBtn.onclick = null;
+    };
+}
+
+function showWrongExplanation(q, userAnswer) {
+    // Render 10-frame with circles for explanation
+    const frameHtml = Array(10).fill(0).map((_,i) => {
+        if(i < q.circleCount) {
+            return `<div style='width:38px;height:38px;border:2px solid #bdbdbd;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;margin-right:8px;'><span style='display:inline-block;width:28px;height:28px;background:#388eea;border-radius:50%;margin:0 auto;'></span></div>`;
+        } else {
+            return `<div style='width:38px;height:38px;border:2px solid #bdbdbd;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;margin-right:8px;'></div>`;
+        }
+    }).join('');
+    feedback.innerHTML = `
+        <div style="background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;">
+            <div style="color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;">Тайлбар</div>
+            <div style="margin-bottom:8px;"><span style='color:#1976d2;'>Асуулт:</span> ${q.question}</div>
+            <div style="margin-bottom:8px;">
+                <span style='color:#1976d2;'>Зураг:</span> <span style='display:inline-flex;gap:8px;vertical-align:middle;'>${frameHtml}</span>
+            </div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> ${q.ask}</div>
+            <div style='margin-bottom:8px;'><span style='color:#e53935;'>Таны хариулт:</span> <b>${userAnswer}</b></div>
+            <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${q.answer}</b></div>
+            <div style='color:#888;'>Дахин оролдоорой!</div>
+        </div>
+    `;
+    feedback.style.color = '';
+    submitBtn.textContent = 'Дахин оролдох';
+    // Add one-time event for try again
+    submitBtn.onclick = function() {
+        // Reset timer
+        timer = 0;
+        timeElapsedEl.textContent = '00:00';
+        stopTimer();
+        startTimer();
+        // Pick a new random question
+        currentIdx = Math.floor(Math.random() * questions.length);
+        renderQuestion(currentIdx);
+        // Restore submit logic
+        submitBtn.onclick = null;
+    };
+}
+
+// Show explanation when clicking the example button
+const exampleBtn = document.querySelector('.a1-example-btn');
+exampleBtn.addEventListener('click', function() {
+    // Reset score, questions answered, timer
+    score = 0;
+    questionsAnswered = 0;
+    timer = 0;
+    scoreEl.textContent = score;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    timeElapsedEl.textContent = '00:00';
+    // Show explanation as before
+    const q = questions[currentIdx];
+    const frameHtml = Array(10).fill(0).map((_,i) => {
+        if(i < q.circleCount) {
+            return `<div style='width:38px;height:38px;border:2px solid #bdbdbd;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;margin-right:8px;'><span style='display:inline-block;width:28px;height:28px;background:#388eea;border-radius:50%;margin:0 auto;'></span></div>`;
+        } else {
+            return `<div style='width:38px;height:38px;border:2px solid #bdbdbd;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;margin-right:8px;'></div>`;
+        }
+    }).join('');
+    feedback.innerHTML = `
+        <div style="background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;">
+            <div style="color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;">Тайлбар</div>
+            <div style="margin-bottom:8px;"><span style='color:#1976d2;'>Асуулт:</span> ${q.question}</div>
+            <div style="margin-bottom:8px;">
+                <span style='color:#1976d2;'>Зураг:</span> <span style='display:inline-flex;gap:8px;vertical-align:middle;'>${frameHtml}</span>
+            </div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> ${q.ask}</div>
+            <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${q.answer}</b></div>
+            <div style='color:#888;'>Жишээгээр тайлбарлав.</div>
+        </div>
+    `;
+    feedback.style.color = '';
+    // Change submit button to 'Дахин оролдох' and set up reset logic
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        // Pick a new random question and reset state
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        currentIdx = Math.floor(Math.random() * questions.length);
+        renderQuestion(currentIdx);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = null;
+    };
+});
+
+function saveProgressIfLoggedIn() {
+    fetch('/api/user').then (r=>r.json()).then(data => {
+        if(data.username) {
+            fetch('/api/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    skill: 'c5',
+                    score: score,
+                    questionsAnswered: questionsAnswered
+                })
+            });
+        }
+    });
+}
+
+// Score logic: +10 for correct, max 100, congrats at 100
+submitBtn.addEventListener('click', function() {
+    if(selectedAnswer === null) {
+        feedback.textContent = 'Хариултаа сонгоно уу!';
+        feedback.style.color = '#1976d2';
+        return;
+    }
+    questionsAnswered++;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    if(selectedAnswer === questions[currentIdx].answer) {
+        if (score < 100) score += 10;
+        if (score > 100) score = 100;
+        scoreEl.textContent = score;
+        // Show IXL-style Excellent! feedback
+        feedback.innerHTML = `
+            <div style="display:flex;justify-content:center;align-items:center;height:220px;">
+                <div style="border:2px solid #c5e1a5;background:#f9fff3;border-radius:6px;padding:36px 54px;box-shadow:0 2px 8px #e0f2c7;display:flex;align-items:center;gap:24px;">
+                    <span style="font-size:3.2rem;color:#7cb342;vertical-align:middle;">&#10003;</span>
+                    <span style="font-size:2.5rem;color:#7cb342;font-weight:bold;">Маш сайн!</span>
+                </div>
+            </div>
+        `;
+        feedback.style.color = '';
+        submitBtn.textContent = 'Илгээх';
+        saveProgressIfLoggedIn(); // Save progress after correct answer
+        if(score === 100) showCongrats();
+        setTimeout(() => {
+            if(score < 100) {
+                currentIdx = Math.floor(Math.random() * questions.length);
+                renderQuestion(currentIdx);
+            }
+        }, 1200);
+    } else {
+        score = 0;
+        scoreEl.textContent = score;
+        showWrongExplanation(questions[currentIdx], selectedAnswer);
+        saveProgressIfLoggedIn(); // Save progress after wrong answer (score reset)
+    }
+});
+
+// Initial render
+renderQuestion(currentIdx);
+    </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Холимог бүлэгт харьцуулах | MaTL</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/">Нүүр</a>
+            <a href="/preschool" class="active">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea"></div>
+    </div>
+    <div class="canvas-container">
+        <div class="a1-content-wrap">
+            <div class="a1-main-card">
+                <div class="a1-main-left">
+                    <div class="a1-breadcrumb"><a href="/preschool">Цэцэрлэг</a> &nbsp;›&nbsp; <b>E.5 Холимог бүлэгт харьцуулах</b></div>
+                    <div class="a1-example-row">
+                        <div class="a1-example-btn"><span class="icon">💡</span>Жишээ ашиглан сурах</div>
+                    </div>
+                    <div class="a1-question" style="font-size:1.2rem;display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+                        <img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" />
+                        <span id="questionText">Аль бүлэг <b>бага</b> эсвэл <b>илүү</b> вэ?</span>
+                    </div>
+                    <div class="a1-imgs" id="itemImages" style="margin-bottom:24px;"></div>
+                    <div class="a1-submit">
+                        <button id="submitBtn" style="background:#59c113;color:#fff;min-width:120px;">Submit</button>
+                    </div>
+                </div>
+                <div class="a1-main-sidebar">
+                    <div class="a1-sidebar-box a1-green">
+                        <div class="a1-sidebar-title">Questions answered</div>
+                        <div id="questionsAnswered" class="a1-sidebar-value">0</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-blue">
+                        <div class="a1-sidebar-title">Time elapsed</div>
+                        <div id="timeElapsed" class="a1-sidebar-value">00:00</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-orange">
+                        <div class="a1-sidebar-title">SmartScore<br><span class="a1-sidebar-sub">out of 100</span></div>
+                        <div id="score" class="a1-sidebar-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Check login status via a simple fetch to /api/user
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        const loginArea = document.getElementById('loginArea');
+        if(data.username) {
+            loginArea.innerHTML = `
+            <div class="user-dropdown" style="position:relative; display:inline-block;">
+                <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea; border-radius:8px; padding:10px 18px; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${data.username}</span>
+                    <span style="font-size:1.1rem;">▼</span>
+                </button>
+                <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:44px; background:#fff; box-shadow:0 4px 24px rgba(0,0,0,0.10); border-radius:12px; min-width:240px; z-index:100; margin-top:8px; padding:0;">
+                    <div style="padding:16px 20px 10px 20px; border-bottom:1px solid #f0f0f0;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#222;">${data.username}</div>
+                        <div style="font-size:0.97rem; color:#388eea;">${data.email || ''}</div>
+                    </div>
+                    <a href="/profile" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#128100;</span> Профайл
+                    </a>
+                    <a href="/settings" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#9881;</span> Тохиргоо
+                    </a>
+                    <a href="/logout" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#d32f2f; text-decoration:none; font-size:1rem;">
+                        <span style="font-size:1.2rem;">&#8617;</span> Гарах
+                    </a>
+                </div>
+            </div>`;
+            // Dropdown logic
+            const btn = document.getElementById('userDropdownBtn');
+            const menu = document.getElementById('userDropdownMenu');
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.style.display = 'none';
+                }
+            });
+        } else {
+            loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+        }
+    });
+
+// Question data: two mixed groups, compare fewer and more
+const GROUPS = [
+    { img: '/static/uploads/bird.png', label: 'шувуу' },
+    { img: '/static/uploads/flower.png', label: 'цэцэг' },
+    { img: '/static/uploads/basketball.png', label: 'сагсан бөмбөг' },
+    { img: '/static/uploads/biscuits.png', label: 'жигнэмэг' },
+    { img: '/static/uploads/candy.png', label: 'чихэр' },
+    { img: '/static/uploads/paper.png', label: 'цаас' },
+    { img: '/static/uploads/pencil.png', label: 'харандаа' },
+    { img: '/static/uploads/tree.png', label: 'мод' },
+];
+const MIN = 1, MAX = 6;
+let currentQuestion = null;
+let selectedGroup = null;
+let questionsAnswered = 0;
+let score = 0;
+let timer = 0;
+let timerInterval = null;
+const questionsAnsweredEl = document.getElementById('questionsAnswered');
+const scoreEl = document.getElementById('score');
+const timeElapsedEl = document.getElementById('timeElapsed');
+const itemImages = document.getElementById('itemImages');
+const submitBtn = document.getElementById('submitBtn');
+const feedback = document.createElement('div');
+feedback.className = 'a1-feedback';
+itemImages.parentNode.insertBefore(feedback, itemImages.nextSibling);
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateQuestion() {
+    // Pick two different groups, each group can have 1-2 types of items
+    let group1Types = [GROUPS[getRandomInt(0, GROUPS.length - 1)]];
+    let group2Types = [GROUPS[getRandomInt(0, GROUPS.length - 1)]];
+    // 50% chance to add a second type to each group
+    if (Math.random() < 0.5) {
+        let idx;
+        do { idx = getRandomInt(0, GROUPS.length - 1); } while (group1Types.some(g=>g.img===GROUPS[idx].img));
+        group1Types.push(GROUPS[idx]);
+    }
+    if (Math.random() < 0.5) {
+        let idx;
+        do { idx = getRandomInt(0, GROUPS.length - 1); } while (group2Types.some(g=>g.img===GROUPS[idx].img));
+        group2Types.push(GROUPS[idx]);
+    }
+    // Assign random counts for each type
+    let group1 = [];
+    let group2 = [];
+    let group1Total = 0, group2Total = 0;
+    group1Types.forEach(g => {
+        let count = getRandomInt(1, 3);
+        group1.push({img: g.img, label: g.label, count});
+        group1Total += count;
+    });
+    group2Types.forEach(g => {
+        let count = getRandomInt(1, 3);
+        group2.push({img: g.img, label: g.label, count});
+        group2Total += count;
+    });
+    // Randomly ask for less or more
+    let askFor = Math.random() < 0.5 ? 'less' : 'more';
+    let answer;
+    if (askFor === 'less') {
+        answer = group1Total < group2Total ? 1 : 2;
+    } else {
+        answer = group1Total > group2Total ? 1 : 2;
+    }
+    return {
+        group1, group2, group1Total, group2Total, askFor, answer
+    };
+}
+
+function renderQuestion() {
+    currentQuestion = generateQuestion();
+    let q = currentQuestion;
+    let questionText = q.askFor === 'less' ? 'Аль бүлэг <b>бага</b> вэ?' : 'Аль бүлэг <b>илүү</b> вэ?';
+    document.getElementById('questionText').innerHTML = questionText;
+    let html = '<div style="display:flex;flex-direction:column;gap:24px;">';
+    // Render group 1
+    html += `<div class="group-select" data-group="1" style="border:2px solid #bfe3ff;border-radius:8px;padding:12px 24px;display:inline-block;cursor:pointer;min-width:180px;">`;
+    q.group1.forEach(item => {
+        for(let i=0;i<item.count;i++) {
+            html += `<img src="${item.img}" alt="${item.label}" style="height:48px;margin:0 6px 0 0;">`;
+        }
+    });
+    html += `<div style='font-size:1rem;color:#888;margin-top:6px;'>`; html += q.group1.map(item=>`${item.count} ${item.label}`).join(', '); html += `</div>`;
+    html += `</div>`;
+    // Render group 2
+    html += `<div class="group-select" data-group="2" style="border:2px solid #bfe3ff;border-radius:8px;padding:12px 24px;display:inline-block;cursor:pointer;min-width:180px;">`;
+    q.group2.forEach(item => {
+        for(let i=0;i<item.count;i++) {
+            html += `<img src="${item.img}" alt="${item.label}" style="height:48px;margin:0 6px 0 0;">`;
+        }
+    });
+    html += `<div style='font-size:1rem;color:#888;margin-top:6px;'>`; html += q.group2.map(item=>`${item.count} ${item.label}`).join(', '); html += `</div>`;
+    html += `</div>`;
+    html += '</div>';
+    itemImages.innerHTML = html;
+    document.querySelectorAll('.group-select').forEach(div => {
+        div.onclick = function() {
+            document.querySelectorAll('.group-select').forEach(d=>d.style.boxShadow='none');
+            div.style.boxShadow = '0 0 0 3px #59c113';
+            selectedGroup = parseInt(div.getAttribute('data-group'));
+        };
+    });
+    selectedGroup = null;
+    feedback.textContent = '';
+    feedback.style.color = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit';
+}
+
+function startTimer() {
+    if (timerInterval) return;
+    timerInterval = setInterval(() => {
+        timer++;
+        const min = String(Math.floor(timer/60)).padStart(2,'0');
+        const sec = String(timer%60).padStart(2,'0');
+        timeElapsedEl.textContent = `${min}:${sec}`;
+    }, 1000);
+}
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+startTimer();
+
+function showCongrats() {
+    stopTimer();
+    feedback.innerHTML = `Та холимог бүлгийг харьцуулж сурлаа! Баяр хүргэе!<br><br>
+        <a href="/preschool"><button style="background:#fff;color:#388eea;border:1px solid #388eea;border-radius:4px;padding:10px 28px;font-size:1.1rem;font-weight:bold;cursor:pointer;">Цэцэрлэг рүү буцах</button></a>
+    `;
+    feedback.style.color = '#4caf50';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.onclick = function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        renderQuestion();
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = null;
+    };
+}
+
+function saveProgressIfLoggedIn() {
+    fetch('/api/user').then (r=>r.json()).then(data => {
+        if(data.username) {
+            fetch('/api/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    skill: 'e5',
+                    score: score,
+                    questionsAnswered: questionsAnswered
+                })
+            });
+        }
+    });
+}
+
+submitBtn.onclick = function() {
+    if(selectedGroup === null) {
+        feedback.textContent = 'Сонголтоо хийнэ үү!';
+        feedback.style.color = '#1976d2';
+        return;
+    }
+    questionsAnswered++;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    if(selectedGroup === currentQuestion.answer) {
+        if (score < 100) score += 20;
+        if (score > 100) score = 100;
+        scoreEl.textContent = score;
+        feedback.innerHTML = `
+            <div style="display:flex;justify-content:center;align-items:center;height:120px;">
+                <div style="border:2px solid #c5e1a5;background:#f9fff3;border-radius:6px;padding:24px 36px;box-shadow:0 2px 8px #e0f2c7;display:flex;align-items:center;gap:18px;">
+                    <span style="font-size:2.2rem;color:#7cb342;vertical-align:middle;">&#10003;</span>
+                    <span style="font-size:1.5rem;color:#7cb342;font-weight:bold;">Зөв!</span>
+                </div>
+            </div>
+        `;
+        feedback.style.color = '';
+        submitBtn.textContent = 'Submit';
+        saveProgressIfLoggedIn();
+        if(score === 100) showCongrats();
+        setTimeout(() => {
+            if(score < 100) {
+                renderQuestion();
+            }
+        }, 1200);
+    } else {
+        score = 0;
+        scoreEl.textContent = score;
+        // Show teaching explanation
+        let correctGroup = currentQuestion.answer === 1 ? currentQuestion.group1 : currentQuestion.group2;
+        let wrongGroup = currentQuestion.answer === 1 ? currentQuestion.group2 : currentQuestion.group1;
+        let explainType = currentQuestion.askFor === 'less' ? 'бага' : 'илүү';
+        feedback.innerHTML = `
+            <div style='background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+                <div style='color:#e53935;font-size:1.2rem;font-weight:bold;margin-bottom:8px;'>Буруу!</div>
+                <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Тайлбар:</span> ${explainType.charAt(0).toUpperCase() + explainType.slice(1)} бүлгийг сонгох ёстой.</div>
+                <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Зураг:</span> <span style='display:inline-flex;gap:8px;vertical-align:middle;'>
+                    <span>"${correctGroup.map(i=>i.label).join(', ')}"</span>
+                    <span>→</span>
+                    ${correctGroup.map(item=>Array(item.count).fill(`<img src='${item.img}' style='height:32px;'>`).join('')).join('')}
+                    <span style='margin:0 12px;'></span>
+                    <span>"${wrongGroup.map(i=>i.label).join(', ')}"</span>
+                    <span>→</span>
+                    ${wrongGroup.map(item=>Array(item.count).fill(`<img src='${item.img}' style='height:32px;'>`).join('')).join('')}
+                </span></div>
+                <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${explainType.charAt(0).toUpperCase() + explainType.slice(1)} (${correctGroup.map(i=>i.count + ' ' + i.label).join(', ')})</b></div>
+                <div style='color:#888;'>Дахин оролдоорой.</div>
+            </div>
+        `;
+        feedback.style.color = '#e53935';
+        submitBtn.textContent = 'Дахин оролдох';
+        saveProgressIfLoggedIn();
+        submitBtn.onclick = function() {
+            timer = 0;
+            timeElapsedEl.textContent = '00:00';
+            stopTimer();
+            startTimer();
+            renderQuestion();
+            submitBtn.onclick = null;
+        };
+    }
+};
+
+// Show explanation when clicking the example button
+const exampleBtn = document.querySelector('.a1-example-btn');
+exampleBtn.addEventListener('click', function() {
+    score = 0;
+    questionsAnswered = 0;
+    timer = 0;
+    scoreEl.textContent = score;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    timeElapsedEl.textContent = '00:00';
+    feedback.innerHTML = `<div style='background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+        <div style='color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;'>Тайлбар</div>
+        <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> Аль бүлэг бага эсвэл илүү вэ?</div>
+        <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Зураг:</span> <span style='display:inline-flex;gap:8px;vertical-align:middle;'>
+            <img src='/static/uploads/bird.png' style='height:38px;'><img src='/static/uploads/bird.png' style='height:38px;'><img src='/static/uploads/flower.png' style='height:38px;'>
+            <span style='margin:0 12px;'></span>
+            <img src='/static/uploads/basketball.png' style='height:38px;'><img src='/static/uploads/basketball.png' style='height:38px;'>
+        </span></div>
+        <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>2 сагсан бөмбөг (бага)</b></div>
+        <div style='color:#888;'>Жишээгээр тайлбарлав.</div>
+    </div>`;
+    feedback.style.color = '';
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        renderQuestion();
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = null;
+    };
+});
+
+// Audio playback for question
+const voiceBtn = document.getElementById('voiceBtn1');
+if (voiceBtn) {
+    voiceBtn.onclick = function() {
+        // Play a generic audio for "Холимог бүлэгт харьцуулах" if available
+        const audioUrl = window.location.origin + '/static/uploads/e5-1.mp3';
+        let audio = document.getElementById('voiceAudio1');
+        if (!audio) {
+            audio = document.createElement('audio');
+            audio.id = 'voiceAudio1';
+            audio.preload = 'auto';
+            document.body.appendChild(audio);
+        }
+        if (audio.src !== audioUrl) {
+            audio.src = audioUrl;
+        }
+        audio.currentTime = 0;
+        audio.play();
+    };
+}
+
+// Initial render
+renderQuestion();
+    </script>
+</body>
+</html>

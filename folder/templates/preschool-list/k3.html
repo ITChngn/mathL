@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дөрвөлжин | MaTL</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/">Нүүр</a>
+            <a href="/preschool" class="active">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea"></div>
+    </div>
+    <div class="canvas-container">
+        <div class="a1-content-wrap">
+            <div class="a1-main-card">
+                <div class="a1-main-left">
+                    <div class="a1-breadcrumb"><a href="/preschool">Цэцэрлэг</a> &nbsp;›&nbsp; <b>K.3 Дөрвөлжин</b></div>
+                    <div class="a1-example-row">
+                        <div class="a1-example-btn"><span class="icon">💡</span>Жишээ ашиглан сурах</div>
+                    </div>
+                    <div class="a1-question" style="font-size:1.2rem;display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+                        <img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" />
+                        <span id="questionText"></span>
+                    </div>
+                    <div class="a1-imgs" id="squareChoices" style="margin-bottom:24px;"></div>
+                    <div class="a1-submit">
+                        <button id="submitBtn" style="background:#59c113;color:#fff;min-width:120px;">Submit</button>
+                    </div>
+                </div>
+                <div class="a1-main-sidebar">
+                    <div class="a1-sidebar-box a1-green">
+                        <div class="a1-sidebar-title">Questions answered</div>
+                        <div id="questionsAnswered" class="a1-sidebar-value">0</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-blue">
+                        <div class="a1-sidebar-title">Time elapsed</div>
+                        <div id="timeElapsed" class="a1-sidebar-value">00:00</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-orange">
+                        <div class="a1-sidebar-title">SmartScore<br><span class="a1-sidebar-sub">out of 100</span></div>
+                        <div id="score" class="a1-sidebar-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Check login status (dropdown like f7.html)
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        const loginArea = document.getElementById('loginArea');
+        if(data.username) {
+            loginArea.innerHTML = `
+            <div class="user-dropdown" style="position:relative; display:inline-block;">
+                <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea; border-radius:8px; padding:10px 18px; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${data.username}</span>
+                    <span style="font-size:1.1rem;">▼</span>
+                </button>
+                <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:44px; background:#fff; box-shadow:0 4px 24px rgba(0,0,0,0.10); border-radius:12px; min-width:240px; z-index:100; margin-top:8px; padding:0;">
+                    <div style="padding:16px 20px 10px 20px; border-bottom:1px solid #f0f0f0;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#222;">${data.username}</div>
+                        <div style="font-size:0.97rem; color:#388eea;">${data.email || ''}</div>
+                    </div>
+                    <a href="/profile" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#128100;</span> Профайл
+                    </a>
+                    <a href="/settings" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#9881;</span> Тохиргоо
+                    </a>
+                    <a href="/logout" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#d32f2f; text-decoration:none; font-size:1rem;">
+                        <span style="font-size:1.2rem;">&#8617;</span> Гарах
+                    </a>
+                </div>
+            </div>`;
+            const btn = document.getElementById('userDropdownBtn');
+            const menu = document.getElementById('userDropdownMenu');
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.style.display = 'none';
+                }
+            });
+        } else {
+            loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+        }
+    });
+
+    // Square questions array
+    const squareQuestions = [
+        {
+            question: 'Аль нь дөрвөлжин дүрс вэ?',
+            answer: 'square',
+            choices: [
+                { type: 'square', color: '#ffe066', value: 'square' },
+                { type: 'circle', color: '#ffb366', value: 'circle' }
+            ],
+            example: {
+                label: 'Дөрвөлжин',
+                type: 'square',
+                color: '#ffe066'
+            },
+            explanation: 'Дөрвөлжин нь 4 тэнцүү талтай, булантай.'
+        },
+        {
+            question: 'Аль нь дөрвөлжин дүрс вэ?',
+            answer: 'square',
+            choices: [
+                { type: 'circle', color: '#7ecbff', value: 'circle' },
+                { type: 'square', color: '#ffe066', value: 'square' }
+            ],
+            example: {
+                label: 'Дөрвөлжин',
+                type: 'square',
+                color: '#ffe066'
+            },
+            explanation: 'Дөрвөлжин нь 4 тэнцүү талтай, булантай.'
+        }
+    ];
+    let currentIdx = 0;
+    let selected = null;
+    let questionsAnswered = 0;
+    let score = 0;
+    let timer = 0;
+    let timerInterval = null;
+    const questionsAnsweredEl = document.getElementById('questionsAnswered');
+    const scoreEl = document.getElementById('score');
+    const timeElapsedEl = document.getElementById('timeElapsed');
+    const squareChoicesDiv = document.getElementById('squareChoices');
+    const submitBtn = document.getElementById('submitBtn');
+    const feedback = document.createElement('div');
+    feedback.className = 'a1-feedback';
+    squareChoicesDiv.parentNode.insertBefore(feedback, squareChoicesDiv.nextSibling);
+
+    function renderQuestion(idx) {
+        const q = squareQuestions[idx];
+        document.getElementById('questionText').innerHTML = q.question;
+        let html = '<div style="display:flex;gap:24px;align-items:flex-end;">';
+        for(let i=0;i<q.choices.length;i++) {
+            if(q.choices[i].type === 'square') {
+                html += `<div class="square-choice" data-choice="${q.choices[i].value}" style="border:2px solid #b3e5fc;border-radius:10px;padding:8px 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;width:200px;height:200px;background:#fff;overflow:hidden;">
+                    <div style="width:140px;height:140px;background:${q.choices[i].color};"></div>
+                </div>`;
+            } else {
+                html += `<div class="square-choice" data-choice="${q.choices[i].value}" style="border:2px solid #b3e5fc;border-radius:10px;padding:8px 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;width:200px;height:200px;background:#fff;overflow:hidden;">
+                    <div style="width:140px;height:140px;background:${q.choices[i].color};border-radius:50%;"></div>
+                </div>`;
+            }
+        }
+        html += '</div>';
+        squareChoicesDiv.innerHTML = html;
+        document.querySelectorAll('.square-choice').forEach(choice => {
+            choice.onclick = function() {
+                document.querySelectorAll('.square-choice').forEach(c => c.style.borderColor = '#b3e5fc');
+                choice.style.borderColor = '#4fc3f7';
+                selected = choice.getAttribute('data-choice');
+            };
+        });
+        selected = null;
+        feedback.textContent = '';
+        feedback.style.color = '';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+    }
+    function startTimer() {
+        if (timerInterval) return;
+        timerInterval = setInterval(() => {
+            timer++;
+            const min = String(Math.floor(timer/60)).padStart(2,'0');
+            const sec = String(timer%60).padStart(2,'0');
+            timeElapsedEl.textContent = `${min}:${sec}`;
+        }, 1000);
+    }
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    function resetAllStateAndRender() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        currentIdx = 0;
+        renderQuestion(currentIdx);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = mainSubmitHandler;
+    }
+    function showCongrats() {
+        stopTimer();
+        feedback.innerHTML = `Та дөрвөлжин дүрсийг ялгаж сурлаа! Баяр хүргэе!<br><br>
+            <a href="/preschool"><button style="background:#fff;color:#388eea;border:1px solid #388eea;border-radius:4px;padding:10px 28px;font-size:1.1rem;font-weight:bold;cursor:pointer;">Цэцэрлэг рүү буцах</button></a>
+        `;
+        feedback.style.color = '#4caf50';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Дахин оролдох';
+        submitBtn.onclick = function() {
+            resetAllStateAndRender();
+        };
+    }
+    function mainSubmitHandler() {
+        if(selected === null) {
+            feedback.textContent = 'Сонголтоо бөглөнө үү!';
+            feedback.style.color = '#1976d2';
+            return;
+        }
+        questionsAnswered++;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        if(selected === squareQuestions[currentIdx].answer) {
+            if (score < 100) score += 10;
+            if (score > 100) score = 100;
+            scoreEl.textContent = score;
+            feedback.innerHTML = `
+                <div style="display:flex;justify-content:center;align-items:center;height:120px;">
+                    <div style="border:2px solid #c5e1a5;background:#f9fff3;border-radius:6px;padding:24px 36px;box-shadow:0 2px 8px #e0f2c7;display:flex;align-items:center;gap:18px;">
+                        <span style="font-size:2.2rem;color:#7cb342;vertical-align:middle;">&#10003;</span>
+                        <span style="font-size:1.5rem;color:#7cb342;font-weight:bold;">Зөв!</span>
+                    </div>
+                </div>
+            `;
+            feedback.style.color = '';
+            saveProgressIfLoggedIn();
+            submitBtn.textContent = 'Submit';
+            if(score === 100) {
+                showCongrats();
+                return;
+            }
+            setTimeout(() => {
+                if(score < 100) {
+                    currentIdx = getRandomIdx();
+                    renderQuestion(currentIdx);
+                }
+            }, 1200);
+        } else {
+            score = 0;
+            scoreEl.textContent = score;
+            feedback.innerHTML = `
+                <div style='background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+                    <div style='color:#e53935;font-size:1.2rem;font-weight:bold;margin-bottom:8px;'>Буруу!</div>
+                    <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Тайлбар:</span> ${squareQuestions[currentIdx].explanation}</div>
+                    <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Зураг:</span> <span style='display:inline-flex;gap:8px;vertical-align:middle;'>
+                        <div style='width:60px;height:60px;background:${squareQuestions[currentIdx].example.color};display:inline-block;'></div> <span style='font-size:1.1rem;color:#4caf50;'>(${squareQuestions[currentIdx].example.label})</span>
+                    </span></div>
+                    <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${squareQuestions[currentIdx].example.label}</b></div>
+                    <div style='color:#888;'>Дахин оролдоорой.</div>
+                </div>
+            `;
+            feedback.style.color = '#e53935';
+            submitBtn.textContent = 'Дахин оролдох';
+            saveProgressIfLoggedIn();
+            submitBtn.onclick = function() {
+                resetAllStateAndRender();
+            };
+        }
+    }
+    function saveProgressIfLoggedIn() {
+        fetch('/api/user').then (r=>r.json()).then(data => {
+            if(data.username) {
+                fetch('/api/progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        skill: 'k3',
+                        score: score,
+                        questionsAnswered: questionsAnswered
+                    })
+                });
+            }
+        });
+    }
+    submitBtn.onclick = mainSubmitHandler;
+    // Show explanation when clicking the example button
+    const exampleBtn = document.querySelector('.a1-example-btn');
+    exampleBtn.addEventListener('click', function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        // Show example for current question
+        const q = squareQuestions[currentIdx];
+        let shapeHtml = '';
+        if(q.example.type === 'square') {
+            shapeHtml = `<div style='width:60px;height:60px;background:${q.example.color};display:inline-block;'></div>`;
+        } else {
+            shapeHtml = `<div style='width:60px;height:60px;background:${q.example.color};border-radius:50%;display:inline-block;'></div>`;
+        }
+        feedback.innerHTML = `<div style='background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+            <div style='color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;'>Тайлбар</div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> ${q.question}</div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Зураг:</span> ${shapeHtml} <span style='font-size:1.1rem;color:#4caf50;'>(${q.example.label})</span></div>
+            <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${q.example.label}</b></div>
+            <div style='color:#888;'>Жишээгээр тайлбарлав.</div>
+        </div>`;
+        feedback.style.color = '';
+        submitBtn.textContent = 'Дахин оролдох';
+        submitBtn.disabled = false;
+        submitBtn.onclick = function() {
+            resetAllStateAndRender();
+        };
+    });
+    // Audio playback for question
+    const voiceBtn = document.getElementById('voiceBtn1');
+    if (voiceBtn) {
+        voiceBtn.onclick = function() {
+            const audioUrl = window.location.origin + '/static/uploads/k3-1.mp3';
+            let audio = document.getElementById('voiceAudio1');
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.id = 'voiceAudio1';
+                audio.preload = 'auto';
+                document.body.appendChild(audio);
+            }
+            if (audio.src !== audioUrl) {
+                audio.src = audioUrl;
+            }
+            audio.currentTime = 0;
+            audio.play();
+        };
+    }
+    // Random question index
+    function getRandomIdx() {
+        return Math.floor(Math.random() * squareQuestions.length);
+    }
+    function nextQuestion() {
+        currentIdx = getRandomIdx();
+        renderQuestion(currentIdx);
+    }
+    // Initial render
+    currentIdx = getRandomIdx();
+    renderQuestion(currentIdx);
+    startTimer();
+    </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaTL - Бүртгүүлэх</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .register-container {
+            max-width: 620px;
+            margin: 80px auto 0 auto;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 36px 32px 28px 32px;
+        }
+        .register-title {
+            text-align: center;
+            font-size: 2rem;
+            color: #388eea;
+            margin-bottom: 24px;
+            font-weight: bold;
+        }
+        .register-form label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 500;
+        }
+        .register-form input {
+            width: 90%;
+            padding: 10px 12px;
+            margin-bottom: 18px;
+            border: 1px solid #bdbdbd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .register-form button {
+            width: 100%;
+            background: #388eea;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .register-form button:hover {
+            background: #1976d2;
+        }
+        .register-footer {
+            text-align: center;
+            margin-top: 18px;
+            color: #666;
+            font-size: 1rem;
+        }
+        .register-footer a {
+            color: #388eea;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/" class="active">Нүүр</a>
+            <a href="/preschool">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea">
+            <!-- Login/Register or Username will be rendered here by JS -->
+        </div>
+    </div>
+    <div class="register-container">
+        <div class="register-title">Бүртгүүлэх</div>
+        <form class="register-form" method="POST" action="/register">
+            <label for="username">Хэрэглэгчийн нэр</label>
+            <input type="text" id="username" name="username" required autocomplete="username">
+            <label for="email">Имэйл</label>
+            <input type="email" id="email" name="email" required autocomplete="email">
+            <label for="password">Нууц үг</label>
+            <input type="password" id="password" name="password" required autocomplete="new-password">
+            <label for="confirm">Нууц үг давтах</label>
+            <input type="password" id="confirm" name="confirm" required autocomplete="new-password">
+            <button type="submit">Бүртгүүлэх</button>
+        </form>
+        <div class="register-footer">
+            Аль хэдийн бүртгэлтэй юу? <a href="/login">Нэвтрэх</a>
+        </div>
+    </div>
+</body>
+<footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Математик бодлого</h3>
+                <p>Математикийг хүн бүрт хүртээмжтэй, ойлгомжтой, хөгжилтэй болгох.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Холбоо барих</h3>
+                <ul class="footer-contact">
+                    <li><span class="footer-icon">&#9993;</span> Matl@edu.mn</li>
+                    <li><span class="footer-icon">&#128205;</span> Чингэлтэй дүүрэг 1-р хороо, 1-р хороолол 1-р байр 1 давхар </li>
+                </ul>
+            </div>
+        </div>
+        <hr style="border:1px solid #3a4252; margin:32px 0 16px 0;">
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                © 2025 МАТЕМАТИК БОЛОВСРОЛЫН ТӨВ
+            </div>
+            <div class="footer-social">
+                <a href="#"><img src="/static/img/instagram.svg" alt="Instagram" height="28"></a>
+                <a href="#"><img src="/static/img/youtube.svg" alt="YouTube" height="28"></a>
+                <a href="#"><img src="/static/img/facebook.svg" alt="Facebook" height="28"></a>
+            </div>
+        </div>
+    </footer>
+    <script>
+// Check login status via a simple fetch to /api/user
+fetch('/api/user').then(r=>r.json()).then(data => {
+    if(data.username && (window.location.pathname==='/login' || window.location.pathname==='/register' || window.location.pathname==='/reset-password' || window.location.pathname==='/forgot-password')) {
+        window.location.href = '/';
+        return;
+    }
+    const loginArea = document.getElementById('loginArea');
+    if(data.username) {
+        loginArea.innerHTML = `
+        <div class="user-dropdown" style="position:relative; display:inline-block;">
+            <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea;">${data.username} ▼</button>
+            <ul id="userDropdownMenu" style="display:none; position:absolute; right:0; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); border-radius:8px; min-width:160px; z-index:100; margin-top:8px; padding:8px 0; list-style:none;">
+                <li><a href="/profile" style="display:block; padding:10px 20px; color:#222; text-decoration:none;">Профайл</a></li>
+                <li><a href="/logout" style="display:block; padding:10px 20px; color:#d32f2f; text-decoration:none;">Гарах</a></li>
+            </ul>
+        </div>`;
+        // Dropdown logic
+        const btn = document.getElementById('userDropdownBtn');
+        const menu = document.getElementById('userDropdownMenu');
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(e) {
+            if (!menu.contains(e.target) && e.target !== btn) {
+                menu.style.display = 'none';
+            }
+        });
+    } else {
+        loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+    }
+});
+</script>
+</html>

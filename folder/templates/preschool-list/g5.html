@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Өнгөөр ангилж эрэмбэлэх | MaTL</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/">Нүүр</a>
+            <a href="/preschool" class="active">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea"></div>
+    </div>
+    <div class="canvas-container">
+        <div class="a1-content-wrap">
+            <div class="a1-main-card">
+                <div class="a1-main-left">
+                    <div class="a1-breadcrumb"><a href="/preschool">Цэцэрлэг</a> &nbsp;›&nbsp; <b>G.5 Өнгөөр ангилж эрэмбэлэх</b></div>
+                    <div class="a1-example-row">
+                        <div class="a1-example-btn"><span class="icon">💡</span>Жишээ ашиглан сурах</div>
+                    </div>
+                    <div class="a1-question" style="font-size:1.2rem;display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+                        <img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" />
+                        <span id="questionText">Өнгөөр ангилж эрэмбэлээрэй.</span>
+                    </div>
+                    <div class="a1-imgs" id="itemImages" style="margin-bottom:24px;"></div>
+                    <div id="sortTargets" style="display:flex;gap:32px;justify-content:center;margin-bottom:24px;"></div>
+                    <div class="a1-submit">
+                        <button id="submitBtn" style="background:#59c113;color:#fff;min-width:120px;">Submit</button>
+                    </div>
+                </div>
+                <div class="a1-main-sidebar">
+                    <div class="a1-sidebar-box a1-green">
+                        <div class="a1-sidebar-title">Questions answered</div>
+                        <div id="questionsAnswered" class="a1-sidebar-value">0</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-blue">
+                        <div class="a1-sidebar-title">Time elapsed</div>
+                        <div id="timeElapsed" class="a1-sidebar-value">00:00</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-orange">
+                        <div class="a1-sidebar-title">SmartScore<br><span class="a1-sidebar-sub">out of 100</span></div>
+                        <div id="score" class="a1-sidebar-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Check login status
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        const loginArea = document.getElementById('loginArea');
+        if(data.username) {
+            loginArea.innerHTML = `
+            <div class="user-dropdown" style="position:relative; display:inline-block;">
+                <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea; border-radius:8px; padding:10px 18px; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${data.username}</span>
+                    <span style="font-size:1.1rem;">▼</span>
+                </button>
+                <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:44px; background:#fff; box-shadow:0 4px 24px rgba(0,0,0,0.10); border-radius:12px; min-width:240px; z-index:100; margin-top:8px; padding:0;">
+                    <div style="padding:16px 20px 10px 20px; border-bottom:1px solid #f0f0f0;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#222;">${data.username}</div>
+                        <div style="font-size:0.97rem; color:#388eea;">${data.email || ''}</div>
+                    </div>
+                    <a href="/profile" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#128100;</span> Профайл
+                    </a>
+                    <a href="/settings" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#9881;</span> Тохиргоо
+                    </a>
+                    <a href="/logout" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#d32f2f; text-decoration:none; font-size:1rem;">
+                        <span style="font-size:1.2rem;">&#8617;</span> Гарах
+                    </a>
+                </div>
+            </div>`;
+            const btn = document.getElementById('userDropdownBtn');
+            const menu = document.getElementById('userDropdownMenu');
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.style.display = 'none';
+                }
+            });
+        } else {
+            loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+        }
+    });
+
+// Utility: random integer in [min, max]
+function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Supported shapes/colors
+const shapeTypes = ['square', 'heart', 'circle', 'triangle'];
+const shapeColors = [
+    {name:'Улаан', code:'#ff0000'},
+    {name:'Ногоон', code:'#00c800'},
+    {name:'Шар', code:'#ffe100'},
+    {name:'Хөх', code:'#1976d2'},
+    {name:'Улбар шар', code:'#ff9800'}
+];
+
+// Generate a random question: sort shapes by color into color boxes
+function makeRandomColorSortQuestion() {
+    // Pick exactly 2 colors for sorting
+    let colorIndices = [0,1,2,3,4].sort(()=>Math.random()-0.5).slice(0, 2);
+    let colors = colorIndices.map(i => shapeColors[i]);
+    // Pick a shape type
+    const type = shapeTypes[randomInt(0, shapeTypes.length-1)];
+    // Generate 4 or 5 shapes, each with a color from colors
+    let numShapes = randomInt(4,5);
+    let objects = [];
+    let answer = colors.map(()=>[]); // answer[i] = indices (1-based) of shapes for color i
+    for(let i=0;i<numShapes;i++) {
+        let colorIdx = randomInt(0, colors.length-1);
+        objects.push({type, color: colors[colorIdx].code, colorIdx});
+        answer[colorIdx].push(i+1);
+    }
+    return {
+        question: `Өнгөөр ангилж эрэмбэлээрэй.`,
+        colors,
+        objects,
+        answer,
+        type,
+        explanation: `Дүрсүүдийг өнгөөр нь ангилж, зөв өнгийн хайрцагт байрлуулна.`
+    };
+}
+
+const colorSortQuestions = Array.from({length:10}, makeRandomColorSortQuestion);
+let currentIdx = randomInt(0, colorSortQuestions.length-1);
+let userBins = [];
+let questionsAnswered = 0;
+let score = 0;
+let timer = 0;
+let timerInterval = null;
+const questionsAnsweredEl = document.getElementById('questionsAnswered');
+const scoreEl = document.getElementById('score');
+const timeElapsedEl = document.getElementById('timeElapsed');
+const itemImages = document.getElementById('itemImages');
+const sortTargets = document.getElementById('sortTargets');
+const submitBtn = document.getElementById('submitBtn');
+const feedback = document.createElement('div');
+feedback.className = 'a1-feedback';
+sortTargets.parentNode.insertBefore(feedback, sortTargets.nextSibling);
+
+function renderShape(obj) {
+    if(obj.type === 'square') {
+        return `<div style=\"width:48px;height:48px;background:${obj.color};margin:0 auto;border-radius:6px;\"></div>`;
+    } else if(obj.type === 'heart') {
+        return `<div style=\"width:48px;height:48px;margin:0 auto;\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\"><path d=\"M24 43s-1.7-1.6-4.2-3.7C12.2 33.2 4 26.6 4 18.5 4 12.7 8.7 8 14.5 8c3.1 0 6 1.4 7.5 3.6C23.5 9.4 26.4 8 29.5 8 35.3 8 40 12.7 40 18.5c0 8.1-8.2 14.7-15.8 20.8C25.7 41.4 24 43 24 43z\" fill=\"${obj.color}\"/></svg></div>`;
+    } else if(obj.type === 'circle') {
+        return `<div style=\"width:48px;height:48px;background:${obj.color};margin:0 auto;border-radius:50%;\"></div>`;
+    } else if(obj.type === 'triangle') {
+        return `<div style=\"width:48px;height:48px;margin:0 auto;\"><svg width=\"48\" height=\"48\" viewBox=\"0 0 48 48\"><polygon points=\"24,6 44,42 4,42\" fill=\"${obj.color}\"/></svg></div>`;
+    }
+    return '';
+}
+
+function renderQuestion(idx) {
+    const q = colorSortQuestions[idx];
+    // Render draggable shapes
+    let html = '<div style="display:flex;gap:24px;justify-content:center;align-items:center;">';
+    for(let i=0;i<q.objects.length;i++) {
+        html += `<div class="draggable-shape" draggable="true" data-idx="${i}" style="border:2px solid #e0e0e0;border-radius:8px;padding:24px 24px 12px 24px;min-width:120px;min-height:120px;box-sizing:border-box;cursor:grab;position:relative;background:#fff;transition:box-shadow .2s;">`;
+        html += renderShape(q.objects[i]);
+        html += `</div>`;
+    }
+    html += '</div>';
+    itemImages.innerHTML = html;
+    // Render bins
+    userBins = q.colors.map(()=>[]);
+    let binsHtml = '';
+    for(let i=0;i<q.colors.length;i++) {
+        binsHtml += `<div class="color-bin" data-bin="${i}" style="flex:1;min-width:180px;min-height:120px;border:2px solid #4fc3f7;border-radius:10px;padding:12px 8px 24px 8px;background:#f9f9f9;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:${q.colors[i].code};border:2px solid #bdbdbd;"></span>
+                <span style="font-size:1.1rem;font-weight:bold;color:#1976d2;">${q.colors[i].name}</span>
+            </div>
+            <div class="bin-drop-area" style="flex:1;width:100%;min-height:60px;border-top:1px solid #b3e5fc;"></div>
+        </div>`;
+    }
+    sortTargets.innerHTML = binsHtml;
+    // Drag and drop logic
+    document.querySelectorAll('.draggable-shape').forEach(div => {
+        div.ondragstart = function(e) {
+            e.dataTransfer.setData('text/plain', div.getAttribute('data-idx'));
+        };
+    });
+    document.querySelectorAll('.bin-drop-area').forEach((area, binIdx) => {
+        area.ondragover = function(e) { e.preventDefault(); };
+        area.ondrop = function(e) {
+            e.preventDefault();
+            const idx = parseInt(e.dataTransfer.getData('text/plain'));
+            if(!userBins[binIdx].includes(idx)) {
+                userBins.forEach(bin => {
+                    const i = bin.indexOf(idx);
+                    if(i !== -1) bin.splice(i,1);
+                });
+                userBins[binIdx].push(idx);
+                renderBins();
+            }
+        };
+    });
+    renderBins();
+    feedback.textContent = '';
+    feedback.style.color = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit';
+}
+
+function renderBins() {
+    const q = colorSortQuestions[currentIdx];
+    document.querySelectorAll('.bin-drop-area').forEach((area, binIdx) => {
+        area.innerHTML = userBins[binIdx].map(idx => renderShape(q.objects[idx])).join('');
+    });
+}
+
+function startTimer() {
+    if (timerInterval) return;
+    timerInterval = setInterval(() => {
+        timer++;
+        const min = String(Math.floor(timer/60)).padStart(2,'0');
+        const sec = String(timer%60).padStart(2,'0');
+        timeElapsedEl.textContent = `${min}:${sec}`;
+    }, 1000);
+}
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+startTimer();
+
+function showCongrats() {
+    stopTimer();
+    feedback.innerHTML = `Та өнгөөр зөв ангилж эрэмбэлж сурлаа! Баяр хүргэе!<br><br>
+        <a href="/preschool"><button style="background:#fff;color:#388eea;border:1px solid #388eea;border-radius:4px;padding:10px 28px;font-size:1.1rem;font-weight:bold;cursor:pointer;">Цэцэрлэг рүү буцах</button></a>
+    `;
+    feedback.style.color = '#4caf50';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.onclick = function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        currentIdx = randomInt(0, colorSortQuestions.length-1);
+        renderQuestion(currentIdx);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = mainSubmitHandler;
+    };
+}
+
+function saveProgressIfLoggedIn() {
+    fetch('/api/user').then (r=>r.json()).then(data => {
+        if(data.username) {
+            fetch('/api/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    skill: 'g5',
+                    score: score,
+                    questionsAnswered: questionsAnswered
+                })
+            });
+        }
+    });
+}
+
+function mainSubmitHandler() {
+    const q = colorSortQuestions[currentIdx];
+    // Check if all bins are filled correctly
+    let correct = true;
+    for(let i=0;i<q.colors.length;i++) {
+        const expected = q.answer[i].slice().sort().join(',');
+        const actual = userBins[i].map(idx=>idx+1).slice().sort().join(',');
+        if(expected !== actual) correct = false;
+    }
+    if(correct) {
+        questionsAnswered++;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        if (score < 100) score += 10;
+        if (score > 100) score = 100;
+        scoreEl.textContent = score;
+        feedback.innerHTML = `
+            <div style="display:flex;justify-content:center;align-items:center;height:120px;">
+                <div style="border:2px solid #c5e1a5;background:#f9fff3;border-radius:6px;padding:24px 36px;box-shadow:0 2px 8px #e0f2c7;display:flex;align-items:center;gap:18px;">
+                    <span style="font-size:2.2rem;color:#7cb342;vertical-align:middle;">&#10003;</span>
+                    <span style="font-size:1.5rem;color:#7cb342;font-weight:bold;">Зөв!</span>
+                </div>
+            </div>
+        `;
+        feedback.style.color = '';
+        submitBtn.textContent = 'Submit';
+        saveProgressIfLoggedIn();
+        if(score === 100) {
+            showCongrats();
+            return;
+        }
+        setTimeout(() => {
+            currentIdx = randomInt(0, colorSortQuestions.length-1);
+            renderQuestion(currentIdx);
+        }, 1200);
+    } else {
+        score = 0;
+        scoreEl.textContent = score;
+        feedback.innerHTML = `<div style='background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+            <div style='color:#e53935;font-size:1.2rem;font-weight:bold;margin-bottom:8px;'>Буруу!</div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Тайлбар:</span> ${q.explanation}</div>
+            <div style='color:#888;'>Дахин оролдоорой.</div>
+        </div>`;
+        feedback.style.color = '#e53935';
+        submitBtn.textContent = 'Дахин оролдох';
+        saveProgressIfLoggedIn();
+        submitBtn.onclick = function() {
+            score = 0;
+            questionsAnswered = 0;
+            timer = 0;
+            scoreEl.textContent = score;
+            questionsAnsweredEl.textContent = questionsAnswered;
+            timeElapsedEl.textContent = '00:00';
+            feedback.textContent = '';
+            currentIdx = randomInt(0, colorSortQuestions.length-1);
+            renderQuestion(currentIdx);
+            stopTimer();
+            startTimer();
+            submitBtn.onclick = mainSubmitHandler;
+        };
+    }
+}
+
+submitBtn.onclick = mainSubmitHandler;
+
+// Show explanation when clicking the example button
+const exampleBtn = document.querySelector('.a1-example-btn');
+exampleBtn.addEventListener('click', function() {
+    score = 0;
+    questionsAnswered = 0;
+    timer = 0;
+    scoreEl.textContent = score;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    timeElapsedEl.textContent = '00:00';
+    currentIdx = randomInt(0, colorSortQuestions.length-1);
+    feedback.innerHTML = `<div style='background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;'>
+        <div style='color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;'>Тайлбар</div>
+        <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> ${colorSortQuestions[currentIdx].question}</div>
+        <div style='color:#888;'>Жишээгээр тайлбарлав.</div>
+    </div>`;
+    feedback.style.color = '';
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        currentIdx = randomInt(0, colorSortQuestions.length-1);
+        feedback.textContent = '';
+        renderQuestion(currentIdx);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = mainSubmitHandler;
+    };
+});
+
+// Audio playback for question
+const voiceBtn = document.getElementById('voiceBtn1');
+if (voiceBtn) {
+    voiceBtn.onclick = function() {
+        // Play a generic audio for "Өнгөөр ангилж эрэмбэлэх" if available
+        const audioUrl = window.location.origin + '/static/uploads/g5-1.mp3';
+        let audio = document.getElementById('voiceAudio1');
+        if (!audio) {
+            audio = document.createElement('audio');
+            audio.id = 'voiceAudio1';
+            audio.preload = 'auto';
+            document.body.appendChild(audio);
+        }
+        if (audio.src !== audioUrl) {
+            audio.src = audioUrl;
+        }
+        audio.currentTime = 0;
+        audio.play();
+    };
+}
+
+// Initial render
+renderQuestion(currentIdx);
+    </script>
+</body>
+</html>

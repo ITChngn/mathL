@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaTL - Админ Хяналтын Самбар</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        .admin-container { max-width:1200px; margin:40px auto; background:#fff; border-radius:18px; box-shadow:0 4px 24px rgba(56,142,224,0.10); padding:36px 28px; }
+        .admin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; }
+        .admin-title { font-size:2.1rem; font-weight:900; color:#388eea; letter-spacing:1px; }
+        .admin-section { margin-bottom:36px; background:#f8fafc; border-radius:14px; box-shadow:0 1px 8px rgba(56,142,224,0.04); padding:28px 24px; }
+        .admin-table { width:100%; border-collapse:collapse; margin-top:12px; background:#fff; border-radius:10px; overflow:hidden; }
+        .admin-table th, .admin-table td { padding:10px 8px; text-align:left; }
+        .admin-table th { background:#e3f2fd; color:#388eea; font-weight:700; }
+        .admin-table td { color:#444; }
+        .admin-actions button { margin-right:8px; }
+        .admin-user-row { transition:background 0.2s; }
+        .admin-user-row:hover { background:#f8fafc; }
+    </style>
+</head>
+<body style="background:#f8fafc;">
+     <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/" class="active">Нүүр</a>
+            <a href="/preschool">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea">
+            <!-- Login/Register or Username will be rendered here by JS -->
+        </div>
+    </div>
+    <div class="admin-container">
+        <div class="admin-header">
+            <div class="admin-title">Админ Хяналтын Самбар</div>
+            <div id="adminWelcome" style="font-size:1.1rem; color:#888;"></div>
+        </div>
+        <!-- Math Problem Add Section (Admin Only, Enhanced) -->
+        <div class="admin-section" style="margin-bottom:36px; background:#f8fafc; border-radius:14px; box-shadow:0 1px 8px rgba(56,142,224,0.04); padding:28px 24px;">
+            <h2 style="font-size:1.2rem; color:#222; font-weight:700; margin-bottom:16px;">Математикийн бодлого нэмэх</h2>
+            <form id="addProblemForm" style="background:#fff; border-radius:10px; padding:18px 20px; margin-bottom:18px; display:flex; flex-direction:column; gap:16px; box-shadow:0 1px 4px rgba(56,142,224,0.04);">
+                <div style="display:flex; flex-wrap:wrap; gap:18px;">
+                    <div style="flex:1 1 180px; min-width:180px;">
+                        <label style="font-weight:600; color:#444;">Гарчиг:
+                            <input type="text" name="title" required style="width:100%; margin-top:6px; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                        </label>
+                    </div>
+                    <div style="flex:1 1 120px; min-width:120px;">
+                        <label style="font-weight:600; color:#444;">Түвшин:
+                            <select name="level" required style="width:100%; margin-top:6px; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                                <option value="easy">Хялбар</option>
+                                <option value="medium">Дунд</option>
+                                <option value="hard">Хүнд</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div style="flex:1 1 140px; min-width:140px;">
+                        <label style="font-weight:600; color:#444;">Төрөл:
+                            <select name="type" required style="width:100%; margin-top:6px; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                                <option value="алгебр">Алгебр</option>
+                                <option value="choice">Сонгох</option>
+                                <option value="short">Богино хариулт</option>
+                                <option value="open">Нээлттэй асуулт</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <label style="font-weight:600; color:#444;">Тайлбар:
+                    <textarea name="description" rows="3" required style="width:100%; margin-top:6px; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;"></textarea>
+                </label>
+                <div style="display:flex; gap:18px; align-items:center;">
+                    <label style="font-weight:600; color:#444;">Хугацаа (сек):
+                        <input type="number" name="timeLimit" min="0" max="3600" step="1" value="0" style="width:100px; margin-left:8px; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                    </label>
+                    <label style="font-weight:600; color:#444; display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" name="hasTimer" value="true" style="width:18px; height:18px;"> Таймертай
+                    </label>
+                </div>
+                <div id="stepsContainer">
+                    <label style="font-weight:600; color:#444;">Дэд асуултууд/Алхамууд:</label>
+                    <div class="step-row" style="display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;">
+                        <input type="text" name="steps[0][question]" placeholder="Дэд асуулт эсвэл алхам" required style="flex:2; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                        <input type="text" name="steps[0][answer]" placeholder="Зөв хариулт" required style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                        <input type="file" name="steps[0][media]" accept="image/*,audio/*" style="flex:1;">
+                        <button type="button" class="remove-step-btn" style="background:#ffeaea; color:#d32f2f; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:1.1rem; display:none;">-</button>
+                    </div>
+                </div>
+                <button type="button" id="addStepBtn" style="background:#e3eaf6; color:#388eea; border:none; border-radius:7px; padding:8px 18px; font-size:1rem; font-weight:600; cursor:pointer; width:fit-content;">+ Дэд асуулт нэмэх</button>
+                <label style="font-weight:600; color:#444;">Нийт бодлогын зураг/дуу (заавал биш):
+                    <input type="file" name="media" accept="image/*,audio/*" style="margin-top:6px;">
+                </label>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <button type="submit" style="background:#4caf50; color:#fff; border:none; border-radius:7px; padding:10px 28px; font-size:1.08rem; font-weight:700; cursor:pointer; box-shadow:0 1px 4px rgba(56,142,224,0.04);">Нэмэх</button>
+                    <span id="addProblemStatus" style="color:#888; font-size:1rem;"></span>
+                </div>
+            </form>
+        </div>
+        <div class="admin-section">
+            <h2 style="font-size:1.2rem; color:#222; font-weight:700; margin-bottom:16px;">Хэрэглэгчдийн жагсаалт</h2>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Нэр</th>
+                            <th>Имэйл</th>
+                            <th>Төрөл</th>
+                            <th>Огноо</th>
+                            <th>Үйлдэл</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUserTable">
+                        <tr><td colspan="6" style="text-align:center; color:#aaa;">Уншиж байна...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="admin-section">
+            <h2 style="font-size:1.2rem; color:#222; font-weight:700; margin-bottom:16px;">Сүүлийн илгээмжүүд</h2>
+            <div id="adminSubmissions" style="color:#888;">Уншиж байна...</div>
+        </div>
+        <div class="admin-section">
+            <h2 style="font-size:1.2rem; color:#222; font-weight:700; margin-bottom:16px;">Зураг болон дуу файл нэмэх</h2>
+            <form id="mediaUploadForm" enctype="multipart/form-data" style="background:#fff; border-radius:10px; padding:18px 20px; margin-bottom:18px; display:flex; flex-wrap:wrap; gap:18px; align-items:center; box-shadow:0 1px 4px rgba(56,142,224,0.04);">
+                <label style="font-weight:600; color:#444;">Файлын төрөл:
+                    <select name="type" id="mediaType" style="margin-left:10px; padding:6px 12px; border-radius:6px; border:1px solid #e0e0e0;">
+                        <option value="image">Зураг</option>
+                        <option value="voice">Дуу</option>
+                    </select>
+                </label>
+                <input type="file" name="file" id="mediaFile" accept="image/*,audio/*" style="padding:6px 0;">
+                <button type="submit" style="background:#388eea; color:#fff; border:none; border-radius:7px; padding:10px 28px; font-size:1.08rem; font-weight:700; cursor:pointer; box-shadow:0 1px 4px rgba(56,142,224,0.04);">Нэмэх</button>
+                <span id="mediaUploadStatus" style="margin-left:18px; color:#888; font-size:1rem;"></span>
+            </form>
+            <div id="mediaList" style="margin-top:10px;"></div>
+        </div>
+    </div>
+    
+    <script>
+    // Check admin access
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        if(!data.isAdmin) {
+            window.location.href = '/';
+            return;
+        }
+        document.getElementById('adminWelcome').textContent = 'Сайн байна уу, ' + (data.username || 'Админ') + '!';
+        // Render login area
+        const loginArea = document.getElementById('loginArea');
+        loginArea.innerHTML = `<span style="color:#388eea; font-weight:600;">${data.username}</span>`;
+    });
+    // Fetch users
+    fetch('/api/admin/users').then(r=>r.json()).then(users => {
+        const table = document.getElementById('adminUserTable');
+        if(!users.length) {
+            table.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#aaa;">Хэрэглэгч олдсонгүй</td></tr>';
+            return;
+        }
+        table.innerHTML = users.map(u => `
+            <tr class="admin-user-row">
+                <td>${u._id || ''}</td>
+                <td>${u.username || ''}</td>
+                <td>${u.email || ''}</td>
+                <td>${u.isAdmin ? 'Админ' : 'Ерөнхий'}</td>
+                <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''}</td>
+                <td class="admin-actions">
+                    <button onclick="alert('Edit user: ${u.username}')" style="background:#e3eaf6; color:#388eea; border:none; border-radius:6px; padding:6px 14px; cursor:pointer;">Засах</button>
+                    <button onclick="alert('Delete user: ${u.username}')" style="background:#ffeaea; color:#d32f2f; border:none; border-radius:6px; padding:6px 14px; cursor:pointer;">Устгах</button>
+                </td>
+            </tr>
+        `).join('');
+    });
+    // Fetch recent submissions
+    fetch('/api/admin/submissions').then(r=>r.json()).then(subs => {
+        const el = document.getElementById('adminSubmissions');
+        if(!subs.length) {
+            el.textContent = 'Илгээмж олдсонгүй';
+            return;
+        }
+        el.innerHTML = '<ul style="padding-left:18px;">' + subs.map(s => `<li><b>${s.username}</b>: ${s.problemTitle} — <span style='color:#388eea;'>${s.status}</span></li>`).join('') + '</ul>';
+    });
+    // Media upload logic
+    const mediaForm = document.getElementById('mediaUploadForm');
+    const mediaStatus = document.getElementById('mediaUploadStatus');
+    const mediaList = document.getElementById('mediaList');
+    if(mediaForm) {
+        mediaForm.onsubmit = async function(e) {
+            e.preventDefault();
+            mediaStatus.textContent = '';
+            const formData = new FormData(mediaForm);
+            mediaStatus.textContent = 'Хуулж байна...';
+            try {
+                const res = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if(result.success) {
+                    mediaStatus.style.color = '#388eea';
+                    mediaStatus.textContent = 'Амжилттай нэмэгдлээ!';
+                    mediaForm.reset();
+                    loadMediaList();
+                } else {
+                    mediaStatus.style.color = '#d32f2f';
+                    mediaStatus.textContent = result.error || 'Алдаа гарлаа.';
+                }
+            } catch (err) {
+                mediaStatus.style.color = '#d32f2f';
+                mediaStatus.textContent = 'Сервертэй холбогдож чадсангүй.';
+            }
+        };
+    }
+    function loadMediaList() {
+        fetch('/api/admin/media').then(r=>r.json()).then(list => {
+            if(!list.length) {
+                mediaList.innerHTML = '<div style="color:#888;">Файл олдсонгүй</div>';
+                return;
+            }
+            mediaList.innerHTML = '<div style="font-weight:600; margin-bottom:8px;">Нэмэгдсэн файлууд:</div>' +
+                '<ul style="list-style:none; padding:0;">' +
+                list.map(m => `<li style='margin-bottom:10px; background:#f5f7fa; border-radius:7px; padding:10px 14px; display:flex; align-items:center; gap:16px;'>
+                    <span style='font-weight:500;'>${m.type === 'image' ? '🖼️' : '🔊'}</span>
+                    <span>${m.filename}</span>
+                    <a href='${m.url}' target='_blank' style='color:#388eea; text-decoration:underline;'>Харах/Сонсох</a>
+                    <span style='color:#888; font-size:0.98rem;'>(${m.uploadedBy ? m.uploadedBy.username : ''})</span>
+                    <span style='color:#aaa; font-size:0.95rem;'>${new Date(m.uploadedAt).toLocaleString()}</span>
+                    <button onclick="deleteMedia('${m._id}', this)" style='background:#ffeaea; color:#d32f2f; border:none; border-radius:6px; padding:6px 14px; cursor:pointer;'>Устгах</button>
+                </li>`).join('') + '</ul>';
+        });
+    }
+    loadMediaList();
+
+    // Add deleteMedia function
+    async function deleteMedia(id, btn) {
+        if (!confirm('Та энэ файлыг устгахдаа итгэлтэй байна уу?')) return;
+        btn.disabled = true;
+        btn.textContent = 'Устгаж байна...';
+        try {
+            const res = await fetch(`/api/admin/media/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (result.success) {
+                loadMediaList();
+            } else {
+                alert(result.error || 'Устгах үед алдаа гарлаа.');
+                btn.disabled = false;
+                btn.textContent = 'Устгах';
+            }
+        } catch (err) {
+            alert('Сервертэй холбогдож чадсангүй.');
+            btn.disabled = false;
+            btn.textContent = 'Устгах';
+        }
+    }
+
+    // Math Problem Add Logic
+    const addProblemForm = document.getElementById('addProblemForm');
+    const addProblemStatus = document.getElementById('addProblemStatus');
+    if(addProblemForm) {
+        addProblemForm.onsubmit = async function(e) {
+            e.preventDefault();
+            addProblemStatus.textContent = '';
+            const formData = new FormData(addProblemForm);
+            addProblemStatus.textContent = 'Илгээж байна...';
+            try {
+                const res = await fetch('/api/admin/add-problem', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                if(result.success) {
+                    addProblemStatus.style.color = '#388eea';
+                    addProblemStatus.textContent = 'Амжилттай нэмэгдлээ!';
+                    addProblemForm.reset();
+                } else {
+                    addProblemStatus.style.color = '#d32f2f';
+                    addProblemStatus.textContent = result.error || 'Алдаа гарлаа.';
+                }
+            } catch (err) {
+                addProblemStatus.style.color = '#d32f2f';
+                addProblemStatus.textContent = 'Сервертэй холбогдож чадсангүй.';
+            }
+        };
+    }
+    // Enhanced Math Problem Add Logic: dynamic steps
+    const stepsContainer = document.getElementById('stepsContainer');
+    const addStepBtn = document.getElementById('addStepBtn');
+    if (addStepBtn && stepsContainer) {
+        let stepCount = 1;
+        addStepBtn.onclick = function() {
+            const row = document.createElement('div');
+            row.className = 'step-row';
+            row.style = 'display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;';
+            row.innerHTML = `
+                <input type="text" name="steps[${stepCount}][question]" placeholder="Дэд асуулт эсвэл алхам" required style="flex:2; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                <input type="text" name="steps[${stepCount}][answer]" placeholder="Зөв хариулт" required style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid #e0e0e0; font-size:1rem;">
+                <input type="file" name="steps[${stepCount}][media]" accept="image/*,audio/*" style="flex:1;">
+                <button type="button" class="remove-step-btn" style="background:#ffeaea; color:#d32f2f; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:1.1rem;">-</button>
+            `;
+            stepsContainer.appendChild(row);
+            // Show remove button for all but the first row
+            row.querySelector('.remove-step-btn').onclick = function() {
+                row.remove();
+            };
+            stepCount++;
+        };
+        // Show remove button for first row if more than one step
+        stepsContainer.addEventListener('DOMNodeInserted', function() {
+            const rows = stepsContainer.querySelectorAll('.step-row');
+            rows.forEach((row, idx) => {
+                const btn = row.querySelector('.remove-step-btn');
+                btn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+            });
+        });
+    }
+    </script>
+</body>
+</html>

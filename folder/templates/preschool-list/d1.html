@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20 хүртэлх зүйлсийг тоолох | MaTL</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+    .a1-imgs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .a1-imgs > div {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+    .a1-imgs img {
+        width: 64px;
+        height: auto;
+        margin: 0;
+    }
+    .item-choice-btn {
+        padding: 10px 18px;
+        font-size: 1.1rem;
+        border-radius: 6px;
+        border: 2px solid #b3e0ff;
+        background: #fff;
+        cursor: pointer;
+        min-width: 44px;
+        margin: 0 6px 8px 0;
+        transition: box-shadow 0.2s, background 0.2s;
+    }
+    .item-choice-btn.selected {
+        box-shadow: 0 0 0 3px #388eea;
+        background: #e3f2fd;
+        border-color: #388eea;
+    }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MaTL</div>
+        <nav class="main-nav">
+            <a href="/">Нүүр</a>
+            <a href="/preschool" class="active">Цэцэрлэг</a>
+        </nav>
+        <div class="login" id="loginArea"></div>
+    </div>
+    <div class="canvas-container">
+        <div class="a1-content-wrap">
+            <div class="a1-main-card">
+                <div class="a1-main-left">
+                    <div class="a1-breadcrumb"><a href="/preschool">Цэцэрлэг</a> &nbsp;›&nbsp; <b>D.1 20 хүртэлх зүйлсийг тоолох</b></div>
+                    <div class="a1-example-row">
+                        <div class="a1-example-btn"><span class="icon">💡</span>Жишээ ашиглан сурах</div>
+                    </div>
+                    <div class="a1-question"></div>
+                    <div class="a1-imgs" id="itemContainer"></div>
+                    <div class="a1-question"></div>
+                    <div class="a1-answers"></div>
+                    <div class="a1-submit">
+                        <button id="submitBtn">Илгээх</button>
+                    </div>
+                    <div class="a1-feedback" id="feedback"></div>
+                </div>
+                <div class="a1-main-sidebar">
+                    <div class="a1-sidebar-box a1-green">
+                        <div class="a1-sidebar-title">Questions answered</div>
+                        <div id="questionsAnswered" class="a1-sidebar-value">0</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-blue">
+                        <div class="a1-sidebar-title">Time elapsed</div>
+                        <div id="timeElapsed" class="a1-sidebar-value">00:00</div>
+                    </div>
+                    <div class="a1-sidebar-box a1-orange">
+                        <div class="a1-sidebar-title">SmartScore<br><span class="a1-sidebar-sub">out of 100</span></div>
+                        <div id="score" class="a1-sidebar-value">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Математик бодлого</h3>
+                <p>Математикийг хүн бүрт хүртээмжтэй, ойлгомжтой, хөгжилтэй болгох.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Холбоо барих</h3>
+                <ul class="footer-contact">
+                    <li><span class="footer-icon">&#9993;</span> Matl@edu.mn</li>
+                    <li><span class="footer-icon">&#128205;</span> Чингэлтэй дүүрэг 1-р хороо, 1-р хороолол 1-р байр 1 давхар </li>
+                </ul>
+            </div>
+        </div>
+        <hr style="border:1px solid #3a4252; margin:32px 0 16px 0;">
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                © 2025 МАТЕМАТИК БОЛОВСРОЛЫН ТӨВ
+            </div>
+            <div class="footer-social">
+                <a href="#"><img src="/static/img/instagram.svg" alt="Instagram" height="28"></a>
+                <a href="#"><img src="/static/img/youtube.svg" alt="YouTube" height="28"></a>
+                <a href="#"><img src="/static/img/facebook.svg" alt="Facebook" height="28"></a>
+            </div>
+        </div>
+    </footer>
+    <script>
+    // Login status logic (same as other activities)
+    fetch('/api/user').then(r=>r.json()).then(data => {
+        const loginArea = document.getElementById('loginArea');
+        if(data.username) {
+            loginArea.innerHTML = `
+            <div class="user-dropdown" style="position:relative; display:inline-block;">
+                <button id="userDropdownBtn" class="login-btn" style="font-weight:bold;color:#388eea; background:#fff; border:1px solid #388eea; border-radius:8px; padding:10px 18px; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.1rem;">${data.username}</span>
+                    <span style="font-size:1.1rem;">▼</span>
+                </button>
+                <div id="userDropdownMenu" style="display:none; position:absolute; right:0; top:44px; background:#fff; box-shadow:0 4px 24px rgba(0,0,0,0.10); border-radius:12px; min-width:240px; z-index:100; margin-top:8px; padding:0;">
+                    <div style="padding:16px 20px 10px 20px; border-bottom:1px solid #f0f0f0;">
+                        <div style="font-weight:bold; font-size:1.1rem; color:#222;">${data.username}</div>
+                        <div style="font-size:0.97rem; color:#388eea;">${data.email || ''}</div>
+                    </div>
+                    <a href="/profile" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#128100;</span> Профайл
+                    </a>
+                    <a href="/settings" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#222; text-decoration:none; font-size:1rem; border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.2rem;">&#9881;</span> Тохиргоо
+                    </a>
+                    <a href="/logout" style="display:flex; align-items:center; gap:10px; padding:12px 20px; color:#d32f2f; text-decoration:none; font-size:1rem;">
+                        <span style="font-size:1.2rem;">&#8617;</span> Гарах
+                    </a>
+                </div>
+            </div>`;
+            const btn = document.getElementById('userDropdownBtn');
+            const menu = document.getElementById('userDropdownMenu');
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!menu.contains(e.target) && e.target !== btn) {
+                    menu.style.display = 'none';
+                }
+            });
+        } else {
+            loginArea.innerHTML = `<a href="/login"><button class="login-btn">Нэвтрэх</button></a> <a href="/register"><button class="login-btn" style="background:#fff;color:#388eea;border:1px solid #388eea;margin-left:8px;">Бүртгүүлэх</button></a>`;
+        }
+    });
+    </script>
+    <script>
+// Use biscuits image from uploads
+const itemImg = "<img src='/static/uploads/biscuits.png' alt='biscuits' style='width:48px;margin:6px;'>";
+const questionData = Array.from({length: 20}, (_, i) => ({ number: i+1, answer: i+1 }));
+let currentQ = Math.floor(Math.random()*questionData.length);
+let selectedAnswer = null;
+const itemContainer = document.getElementById('itemContainer');
+const feedback = document.getElementById('feedback');
+const submitBtn = document.getElementById('submitBtn');
+let questionsAnswered = 0;
+let score = 0;
+let timer = 0;
+let timerInterval = null;
+const questionsAnsweredEl = document.getElementById('questionsAnswered');
+const scoreEl = document.getElementById('score');
+const timeElapsedEl = document.getElementById('timeElapsed');
+const questionDivs = document.querySelectorAll('.a1-question');
+const answersDiv = document.querySelector('.a1-answers');
+
+function renderItemQuestion(idx) {
+    const q = questionData[idx];
+    itemContainer.innerHTML = '';
+    // Render biscuits in 1 to 2 rows, 10 per row
+    let count = 0;
+    let rows = Math.ceil(q.number / 10);
+    let n = 0;
+    for(let r=0;r<rows;r++) {
+        const row = document.createElement('div');
+        for(let i=0;i<10 && n<q.number;i++,n++) {
+            const img = document.createElement('img');
+            img.src = '/static/uploads/biscuits.png';
+            img.alt = 'biscuits';
+            img.setAttribute('data-idx', n+1);
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', function() {
+                if (!this.classList.contains('selected')) {
+                    this.classList.add('selected');
+                    count++;
+                } else {
+                    this.classList.remove('selected');
+                    count--;
+                }
+            });
+            row.appendChild(img);
+        }
+        itemContainer.appendChild(row);
+    }
+    // Render questions WITH volume icons
+    questionDivs[0].innerHTML = '<img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn1" /> Зүйлсийг тоолоорой. Тоолох бүрдээ дээр нь дарж болно.';
+    questionDivs[1].innerHTML = '<img src="/static/img/volume.svg" alt="Унших" style="width:22px;height:22px;vertical-align:middle;display:inline-block;cursor:pointer;" id="voiceBtn2" /> Хэдэн жигнэмэг байна вэ?';
+    // Render answer choices (1-20) as 2 horizontal rows, each with 10 vertical buttons (columns)
+    let choicesHtml = '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">';
+    for(let row=0;row<2;row++) {
+        choicesHtml += '<div style="display:flex;flex-direction:row;gap:8px;">';
+        for(let col=1;col<=10;col++) {
+            let num = row*10+col;
+            choicesHtml += `<button class="item-choice-btn${selectedAnswer===num?' selected':''}" data-val="${num}">${num}</button>`;
+        }
+        choicesHtml += '</div>';
+    }
+    choicesHtml += '</div>';
+    answersDiv.innerHTML = choicesHtml;
+    // Attach click handlers
+    document.querySelectorAll('.item-choice-btn').forEach(btn => {
+        btn.onclick = function() {
+            document.querySelectorAll('.item-choice-btn').forEach(b=>b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedAnswer = parseInt(btn.getAttribute('data-val'));
+        };
+    });
+    selectedAnswer = null;
+    feedback.textContent = '';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Илгээх';
+    // Attach voice button handlers
+    const voiceBtn1 = document.getElementById('voiceBtn1');
+    if (voiceBtn1) {
+        voiceBtn1.onclick = function() {
+            const audio = new Audio('/static/uploads/b2-1.mp3');
+            audio.play();
+        };
+    }
+    const voiceBtn2 = document.getElementById('voiceBtn2');
+    if (voiceBtn2) {
+        voiceBtn2.onclick = function() {
+            const q = questionData[currentQ];
+            const audioUrl = window.location.origin + `/static/uploads/${q.number}.mp3`;
+            var audio = document.getElementById('voiceAudio1');
+            if (audio) {
+                if (audio.src !== audioUrl) {
+                    audio.src = audioUrl;
+                }
+                audio.currentTime = 0;
+                audio.play();
+            }
+        };
+    }
+}
+function startTimer() {
+    if (timerInterval) return;
+    timerInterval = setInterval(() => {
+        timer++;
+        const min = String(Math.floor(timer/60)).padStart(2,'0');
+        const sec = String(timer%60).padStart(2,'0');
+        timeElapsedEl.textContent = `${min}:${sec}`;
+    }, 1000);
+}
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+startTimer();
+
+function showWrongExplanation(q, userAnswer) {
+    // Render biscuits horizontally for feedback
+    const imgsHtml = Array(q.number).fill(0).map(() => `<img src='/static/uploads/biscuits.png' alt='biscuits' style='width:40px;vertical-align:middle;margin:0 2px;'>`).join('');
+    feedback.innerHTML = `
+        <div style="background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;">
+            <div style="color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;">Тайлбар</div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> Зүйлсийг тоолоорой. Тоолох бүрдээ дээр нь дарж болно.</div>
+            <div style="margin-bottom:8px;">
+                <span style='color:#1976d2;'>Зураг:</span> ${imgsHtml}
+            </div>
+            <div style='margin-bottom:8px;'><span style='color:#1976d2;'>Асуулт:</span> Хэдэн жигнэмэг байна вэ?</div>
+            <div style='margin-bottom:8px;'><span style='color:#e53935;'>Таны хариулт:</span> <b>${userAnswer !== null ? userAnswer : '-'}</b></div>
+            <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${q.answer}</b></div>
+            <div style='color:#888;'>Дахин оролдоорой!</div>
+        </div>
+    `;
+    feedback.style.color = '';
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        timer = 0;
+        timeElapsedEl.textContent = '00:00';
+        stopTimer();
+        startTimer();
+        currentQ = Math.floor(Math.random()*questionData.length);
+        renderItemQuestion(currentQ);
+        submitBtn.onclick = null;
+        renderItemQuestion(currentQ);
+        submitBtn.onclick = mainSubmitHandler;
+    };
+}
+
+function showCongrats() {
+    stopTimer();
+    feedback.innerHTML = `Та 20 хүртэлх зүйлсийг тоолохыг сурлаа! Баяр хүргэе!<br><br>
+        <a href="/preschool"><button style="background:#388eea;color:#fff;border:none;border-radius:4px;padding:10px 28px;font-size:1.1rem;font-weight:bold;margin-right:12px;cursor:pointer;">Цэцэрлэг рүү буцах</button></a>
+    `;
+    feedback.style.color = '#4caf50';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.onclick = function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        currentQ = Math.floor(Math.random() * questionData.length);
+        renderItemQuestion(currentQ);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = null;
+        renderItemQuestion(currentQ);
+        submitBtn.onclick = mainSubmitHandler;
+    };
+}
+
+function mainSubmitHandler() {
+    if(selectedAnswer === null) {
+        feedback.textContent = 'Хариултаа сонгоно уу!';
+        feedback.style.color = '#1976d2';
+        return;
+    }
+    questionsAnswered++;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    if(selectedAnswer === questionData[currentQ].answer) {
+        if (score < 100) score += 5;
+        if (score > 100) score = 100;
+        scoreEl.textContent = score;
+        feedback.innerHTML = `
+            <div style="display:flex;justify-content:center;align-items:center;height:220px;">
+                <div style="border:2px solid #c5e1a5;background:#f9fff3;border-radius:6px;padding:36px 54px;box-shadow:0 2px 8px #e0f2c7;display:flex;align-items:center;gap:24px;">
+                    <span style="font-size:3.2rem;color:#7cb342;vertical-align:middle;">&#10003;</span>
+                    <span style="font-size:2.5rem;color:#7cb342;font-weight:bold;">Маш сайн!</span>
+                </div>
+            </div>
+        `;
+        feedback.style.color = '';
+        submitBtn.textContent = 'Илгээх';
+        if(score === 100) showCongrats();
+        setTimeout(() => {
+            if(score < 100) {
+                currentQ = Math.floor(Math.random()*questionData.length);
+                renderItemQuestion(currentQ);
+            }
+        }, 1200);
+    } else {
+        score = 0;
+        scoreEl.textContent = score;
+        showWrongExplanation(questionData[currentQ], selectedAnswer);
+    }
+}
+
+submitBtn.onclick = mainSubmitHandler;
+renderItemQuestion(currentQ);
+
+// Example button logic
+const exampleBtn = document.querySelector('.a1-example-btn');
+exampleBtn.addEventListener('click', function() {
+    score = 0;
+    questionsAnswered = 0;
+    timer = 0;
+    scoreEl.textContent = score;
+    questionsAnsweredEl.textContent = questionsAnswered;
+    timeElapsedEl.textContent = '00:00';
+    const q = questionData[currentQ];
+    feedback.innerHTML = `
+        <div style="background:#f9fbe7;border:1px solid #dce775;border-radius:10px;padding:18px 18px 10px 18px;margin-top:10px;">
+            <div style="color:#689f38;font-size:1.3rem;font-weight:bold;margin-bottom:8px;">Тайлбар</div>
+            <div style="margin-bottom:8px;"><span style='color:#1976d2;'>Асуулт:</span> <span>Хэдэн жигнэмэг байна вэ?</span></div>
+            <div style="margin-bottom:8px;">
+                <span style='color:#1976d2;'>Зураг:</span> ${itemImg.repeat(q.number)}
+            </div>
+            <div style='margin-bottom:8px;'><span style='color:#4caf50;'>Зөв хариулт:</span> <b>${q.answer}</b></div>
+            <div style='color:#888;'>Жишээгээр тайлбарлав.</div>
+        </div>
+    `;
+    feedback.style.color = '';
+    submitBtn.textContent = 'Дахин оролдох';
+    submitBtn.disabled = false;
+    submitBtn.onclick = function() {
+        score = 0;
+        questionsAnswered = 0;
+        timer = 0;
+        scoreEl.textContent = score;
+        questionsAnsweredEl.textContent = questionsAnswered;
+        timeElapsedEl.textContent = '00:00';
+        feedback.textContent = '';
+        currentQ = Math.floor(Math.random() * questionData.length);
+        renderItemQuestion(currentQ);
+        stopTimer();
+        startTimer();
+        submitBtn.onclick = null;
+        renderItemQuestion(currentQ);
+        submitBtn.onclick = mainSubmitHandler;
+    };
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const voiceBtn = document.getElementById('voiceBtn1');
+    if (voiceBtn) {
+        voiceBtn.onclick = function() {
+            // Get the current number of biscuits
+            const q = questionData[currentQ];
+            const audioUrl = window.location.origin + `/static/uploads/${q.number}.mp3`;
+            var audio = document.getElementById('voiceAudio1');
+            if (audio) {
+                if (audio.src !== audioUrl) {
+                    audio.src = audioUrl;
+                }
+                audio.currentTime = 0;
+                audio.play();
+            }
+        };
+    }
+});
+    </script>
+</body>
+</html>
